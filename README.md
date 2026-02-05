@@ -9,7 +9,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![MCP](https://img.shields.io/badge/MCP-4_Tools-purple.svg)](#mcp-server)
 
-[快速开始](#快速开始) · [结果合并](#结果合并) · [MCP Server](#mcp-server) · [与 DataRecipe 联动](#与-datarecipe-联动)
+[快速开始](#快速开始) · [结果合并](#结果合并) · [MCP Server](#mcp-server) · [Data Pipeline 生态](#data-pipeline-生态)
 
 </div>
 
@@ -254,15 +254,50 @@ Claude: [调用 generate_annotator]
 
 ---
 
-## 与 DataRecipe 联动
+## Data Pipeline 生态
 
-DataLabel 是 DataRecipe 生态的一部分，实现完整的数据生产工作流：
+DataLabel 是 Data Pipeline 生态的标注组件：
 
 ```
-DataRecipe (逆向分析) → DataLabel (数据标注) → DataSynth (数据合成) → DataCheck (质量检查)
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           Data Pipeline 生态                                │
+├──────────────────┬──────────────────┬──────────────────┬────────────────────┤
+│   DataRecipe     │    DataLabel     │    DataSynth     │     DataCheck      │
+│     数据分析      │      数据标注     │      数据合成     │       数据质检      │
+├──────────────────┼──────────────────┼──────────────────┼────────────────────┤
+│  · 逆向工程分析   │  · HTML标注界面   │  · LLM批量生成    │  · 规则验证        │
+│  · Schema提取    │  · 多标注员合并    │  · 种子数据扩充   │  · 重复检测        │
+│  · 成本估算      │  · IAA一致性计算  │  · 成本追踪       │  · 分布分析        │
+│  · 样例生成      │  · 断点续标       │  · 交互/API模式   │  · 质量报告        │
+└──────────────────┴──────────────────┴──────────────────┴────────────────────┘
 ```
 
-### 双 MCP 配置
+### 生态项目
+
+| 项目 | 功能 | 仓库 |
+|------|------|------|
+| **DataRecipe** | 数据集逆向分析 | [data-recipe](https://github.com/liuxiaotong/data-recipe) |
+| **DataLabel** | 轻量级标注工具 | [data-label](https://github.com/liuxiaotong/data-label) |
+| **DataSynth** | 数据合成扩充 | [data-synth](https://github.com/liuxiaotong/data-synth) |
+| **DataCheck** | 数据质量检查 | [data-check](https://github.com/liuxiaotong/data-check) |
+
+### 端到端工作流
+
+```bash
+# 1. DataRecipe: 分析数据集，生成 Schema 和样例
+datarecipe deep-analyze tencent/CL-bench -o ./output
+
+# 2. DataLabel: 生成标注界面，人工标注/校准种子数据
+datalabel generate ./output/tencent_CL-bench/
+
+# 3. DataSynth: 基于种子数据批量合成
+datasynth generate ./output/tencent_CL-bench/ -n 1000
+
+# 4. DataCheck: 质量检查
+datacheck validate ./output/tencent_CL-bench/
+```
+
+### 四合一 MCP 配置
 
 ```json
 {
@@ -274,20 +309,17 @@ DataRecipe (逆向分析) → DataLabel (数据标注) → DataSynth (数据合�
     "datalabel": {
       "command": "uv",
       "args": ["--directory", "/path/to/data-label", "run", "python", "-m", "datalabel.mcp_server"]
+    },
+    "datasynth": {
+      "command": "uv",
+      "args": ["--directory", "/path/to/data-synth", "run", "python", "-m", "datasynth.mcp_server"]
+    },
+    "datacheck": {
+      "command": "uv",
+      "args": ["--directory", "/path/to/data-check", "run", "python", "-m", "datacheck.mcp_server"]
     }
   }
 }
-```
-
-### 工作流示例
-
-```
-用户: 分析 tencent/CL-bench 数据集，然后生成标注界面
-
-Claude 自动执行:
-  1. [datarecipe deep_analyze] → 生成分析报告 (23 个文件)
-  2. [datalabel generate_annotator] → 生成标注界面
-  3. 返回: annotator.html 路径，在浏览器中打开即可标注
 ```
 
 ---
