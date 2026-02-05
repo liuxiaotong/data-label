@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }} - DataLabel</title>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-light: #818cf8;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-300: #d1d5db;
+            --gray-500: #6b7280;
+            --gray-700: #374151;
+            --gray-900: #111827;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: var(--gray-50);
+            color: var(--gray-900);
+            line-height: 1.6;
+        }
+
+        /* Header */
+        header {
+            background: white;
+            border-bottom: 1px solid var(--gray-200);
+            padding: 1rem 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        header h1 {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .progress-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .progress-bar {
+            width: 200px;
+            height: 8px;
+            background: var(--gray-200);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: var(--primary);
+            transition: width 0.3s ease;
+        }
+
+        .progress-text {
+            font-size: 0.875rem;
+            color: var(--gray-500);
+        }
+
+        /* Main Layout */
+        main {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 2rem;
+        }
+
+        @media (max-width: 900px) {
+            main {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Task Card */
+        .task-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            padding: 1.5rem;
+        }
+
+        .task-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--gray-200);
+        }
+
+        .task-id {
+            font-size: 0.875rem;
+            color: var(--gray-500);
+        }
+
+        .task-type {
+            background: var(--primary-light);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .task-field {
+            margin-bottom: 1rem;
+        }
+
+        .task-field-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--gray-500);
+            text-transform: uppercase;
+            margin-bottom: 0.5rem;
+        }
+
+        .task-field-value {
+            background: var(--gray-50);
+            padding: 1rem;
+            border-radius: 8px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 0.875rem;
+            white-space: pre-wrap;
+            word-break: break-word;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .task-field-value.svg-preview {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: white;
+            border: 1px solid var(--gray-200);
+        }
+
+        .task-field-value.svg-preview svg {
+            max-width: 100%;
+            max-height: 200px;
+        }
+
+        /* Annotation Panel */
+        .annotation-panel {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            padding: 1.5rem;
+            position: sticky;
+            top: 80px;
+        }
+
+        .annotation-panel h3 {
+            font-size: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .score-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .score-btn {
+            padding: 0.75rem 1rem;
+            border: 2px solid var(--gray-200);
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+            font-size: 0.875rem;
+            text-align: left;
+            transition: all 0.2s;
+        }
+
+        .score-btn:hover {
+            border-color: var(--primary-light);
+        }
+
+        .score-btn.selected {
+            border-color: var(--primary);
+            background: var(--primary);
+            color: white;
+        }
+
+        .score-btn[data-score="1"] { border-left: 4px solid var(--success); }
+        .score-btn[data-score="0.5"] { border-left: 4px solid var(--warning); }
+        .score-btn[data-score="0"] { border-left: 4px solid var(--danger); }
+
+        .comment-area {
+            margin-bottom: 1.5rem;
+        }
+
+        .comment-area label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+
+        .comment-area textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--gray-200);
+            border-radius: 8px;
+            font-size: 0.875rem;
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .comment-area textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        /* Navigation */
+        .nav-buttons {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .nav-btn {
+            flex: 1;
+            padding: 0.75rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .nav-btn.primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .nav-btn.primary:hover {
+            background: var(--primary-light);
+        }
+
+        .nav-btn.secondary {
+            background: var(--gray-100);
+            color: var(--gray-700);
+        }
+
+        .nav-btn.secondary:hover {
+            background: var(--gray-200);
+        }
+
+        .nav-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Guidelines Panel */
+        .guidelines-panel {
+            margin-top: 2rem;
+        }
+
+        .guidelines-toggle {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background: var(--gray-100);
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            text-align: left;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .guidelines-content {
+            display: none;
+            padding: 1rem;
+            background: white;
+            border: 1px solid var(--gray-200);
+            border-radius: 0 0 8px 8px;
+            font-size: 0.875rem;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .guidelines-content.open {
+            display: block;
+        }
+
+        .guidelines-content h1, .guidelines-content h2, .guidelines-content h3 {
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .guidelines-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+        }
+
+        .guidelines-content th, .guidelines-content td {
+            border: 1px solid var(--gray-200);
+            padding: 0.5rem;
+            text-align: left;
+        }
+
+        .guidelines-content code {
+            background: var(--gray-100);
+            padding: 0.125rem 0.375rem;
+            border-radius: 4px;
+            font-size: 0.8125rem;
+        }
+
+        /* Export Button */
+        .export-section {
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--gray-200);
+        }
+
+        .export-btn {
+            width: 100%;
+            padding: 0.75rem;
+            background: var(--success);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .export-btn:hover {
+            opacity: 0.9;
+        }
+
+        /* Status indicator */
+        .status-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 0.5rem;
+        }
+
+        .status-indicator.complete { background: var(--success); }
+        .status-indicator.partial { background: var(--warning); }
+        .status-indicator.pending { background: var(--gray-300); }
+
+        /* Keyboard shortcuts hint */
+        .shortcuts-hint {
+            font-size: 0.75rem;
+            color: var(--gray-500);
+            margin-top: 1rem;
+            text-align: center;
+        }
+
+        .shortcuts-hint kbd {
+            background: var(--gray-100);
+            padding: 0.125rem 0.375rem;
+            border-radius: 4px;
+            border: 1px solid var(--gray-200);
+        }
+
+        /* Toast notification */
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: var(--gray-900);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            opacity: 0;
+            transform: translateY(1rem);
+            transition: all 0.3s;
+            z-index: 1000;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>{{ title }}</h1>
+        <div class="progress-info">
+            <div class="progress-bar">
+                <div class="progress-bar-fill" id="progressBar"></div>
+            </div>
+            <span class="progress-text" id="progressText">0 / {{ total_tasks }}</span>
+        </div>
+    </header>
+
+    <main>
+        <div class="task-area">
+            <div class="task-card" id="taskCard">
+                <div class="task-header">
+                    <span class="task-id" id="taskId">TASK_001</span>
+                    <span class="task-type" id="taskType">default</span>
+                </div>
+                <div id="taskFields">
+                    <!-- Task fields will be rendered here -->
+                </div>
+            </div>
+
+            <div class="guidelines-panel">
+                <button class="guidelines-toggle" onclick="toggleGuidelines()">
+                    <span>📖 标注指南</span>
+                    <span id="guidelinesArrow">▼</span>
+                </button>
+                <div class="guidelines-content" id="guidelinesContent">
+                    {{ guidelines_html | safe }}
+                </div>
+            </div>
+        </div>
+
+        <div class="annotation-area">
+            <div class="annotation-panel">
+                <h3>评分</h3>
+                <div class="score-buttons" id="scoreButtons">
+                    {% for rubric in scoring_rubric %}
+                    <button class="score-btn" data-score="{{ rubric.score }}" onclick="selectScore('{{ rubric.score }}')">
+                        {{ rubric.score }} - {{ rubric.criteria }}
+                    </button>
+                    {% else %}
+                    <button class="score-btn" data-score="1" onclick="selectScore('1')">
+                        ✓ 正确
+                    </button>
+                    <button class="score-btn" data-score="0.5" onclick="selectScore('0.5')">
+                        △ 部分正确
+                    </button>
+                    <button class="score-btn" data-score="0" onclick="selectScore('0')">
+                        ✗ 错误
+                    </button>
+                    {% endfor %}
+                </div>
+
+                <div class="comment-area">
+                    <label for="comment">备注 (可选)</label>
+                    <textarea id="comment" placeholder="添加备注..."></textarea>
+                </div>
+
+                <div class="nav-buttons">
+                    <button class="nav-btn secondary" id="prevBtn" onclick="prevTask()">
+                        ← 上一条
+                    </button>
+                    <button class="nav-btn primary" id="nextBtn" onclick="nextTask()">
+                        下一条 →
+                    </button>
+                </div>
+
+                <div class="shortcuts-hint">
+                    快捷键: <kbd>←</kbd> <kbd>→</kbd> 导航 · <kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd> 评分
+                </div>
+
+                <div class="export-section">
+                    <button class="export-btn" onclick="exportResults()">
+                        📥 导出标注结果
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // Embedded data
+        const TASKS = {{ tasks_json | safe }};
+        const SCHEMA = {{ schema_json | safe }};
+        const TOTAL_TASKS = {{ total_tasks }};
+
+        // State
+        let currentIndex = 0;
+        let responses = {};
+
+        // Load saved responses from localStorage
+        const storageKey = 'datalabel_' + (SCHEMA.project_name || 'default').replace(/\s+/g, '_');
+        const savedResponses = localStorage.getItem(storageKey);
+        if (savedResponses) {
+            try {
+                responses = JSON.parse(savedResponses);
+            } catch (e) {
+                console.error('Failed to load saved responses:', e);
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            renderTask(currentIndex);
+            updateProgress();
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.target.tagName === 'TEXTAREA') return;
+
+            switch(e.key) {
+                case 'ArrowLeft':
+                    prevTask();
+                    break;
+                case 'ArrowRight':
+                    nextTask();
+                    break;
+                case '1':
+                    selectScore(getScoreValue(0));
+                    break;
+                case '2':
+                    selectScore(getScoreValue(1));
+                    break;
+                case '3':
+                    selectScore(getScoreValue(2));
+                    break;
+            }
+        });
+
+        function getScoreValue(index) {
+            const buttons = document.querySelectorAll('.score-btn');
+            if (buttons[index]) {
+                return buttons[index].dataset.score;
+            }
+            return null;
+        }
+
+        function renderTask(index) {
+            if (index < 0 || index >= TASKS.length) return;
+
+            const task = TASKS[index];
+            const taskId = task.id || `TASK_${String(index + 1).padStart(3, '0')}`;
+
+            // Update header
+            document.getElementById('taskId').textContent = taskId;
+            document.getElementById('taskType').textContent = task.task_type || 'default';
+
+            // Render fields
+            const fieldsContainer = document.getElementById('taskFields');
+            fieldsContainer.innerHTML = '';
+
+            const data = task.data || task;
+            for (const [key, value] of Object.entries(data)) {
+                if (key === 'task_type' || key === 'id') continue;
+
+                const fieldDiv = document.createElement('div');
+                fieldDiv.className = 'task-field';
+
+                const labelDiv = document.createElement('div');
+                labelDiv.className = 'task-field-label';
+                labelDiv.textContent = key;
+
+                const valueDiv = document.createElement('div');
+                valueDiv.className = 'task-field-value';
+
+                // Check if it's SVG content
+                if (typeof value === 'string' && value.trim().startsWith('<svg')) {
+                    valueDiv.className += ' svg-preview';
+                    valueDiv.innerHTML = value;
+                } else if (typeof value === 'object') {
+                    valueDiv.textContent = JSON.stringify(value, null, 2);
+                } else {
+                    valueDiv.textContent = value;
+                }
+
+                fieldDiv.appendChild(labelDiv);
+                fieldDiv.appendChild(valueDiv);
+                fieldsContainer.appendChild(fieldDiv);
+            }
+
+            // Restore saved response
+            const savedResponse = responses[taskId];
+            if (savedResponse) {
+                // Restore score
+                document.querySelectorAll('.score-btn').forEach(btn => {
+                    btn.classList.remove('selected');
+                    if (btn.dataset.score === String(savedResponse.score)) {
+                        btn.classList.add('selected');
+                    }
+                });
+                // Restore comment
+                document.getElementById('comment').value = savedResponse.comment || '';
+            } else {
+                document.querySelectorAll('.score-btn').forEach(btn => btn.classList.remove('selected'));
+                document.getElementById('comment').value = '';
+            }
+
+            // Update navigation buttons
+            document.getElementById('prevBtn').disabled = index === 0;
+            document.getElementById('nextBtn').textContent = index === TASKS.length - 1 ? '完成 ✓' : '下一条 →';
+
+            currentIndex = index;
+        }
+
+        function selectScore(score) {
+            if (score === null) return;
+
+            // Update UI
+            document.querySelectorAll('.score-btn').forEach(btn => {
+                btn.classList.remove('selected');
+                if (btn.dataset.score === score) {
+                    btn.classList.add('selected');
+                }
+            });
+
+            // Save response
+            saveCurrentResponse();
+        }
+
+        function saveCurrentResponse() {
+            const task = TASKS[currentIndex];
+            const taskId = task.id || `TASK_${String(currentIndex + 1).padStart(3, '0')}`;
+
+            const selectedBtn = document.querySelector('.score-btn.selected');
+            const score = selectedBtn ? selectedBtn.dataset.score : null;
+            const comment = document.getElementById('comment').value.trim();
+
+            if (score !== null) {
+                responses[taskId] = {
+                    task_id: taskId,
+                    score: parseFloat(score),
+                    comment: comment,
+                    annotated_at: new Date().toISOString(),
+                };
+
+                // Save to localStorage
+                localStorage.setItem(storageKey, JSON.stringify(responses));
+                updateProgress();
+                showToast('已保存');
+            }
+        }
+
+        function prevTask() {
+            saveCurrentResponse();
+            if (currentIndex > 0) {
+                renderTask(currentIndex - 1);
+            }
+        }
+
+        function nextTask() {
+            saveCurrentResponse();
+            if (currentIndex < TASKS.length - 1) {
+                renderTask(currentIndex + 1);
+            } else {
+                showToast('已完成所有任务!');
+            }
+        }
+
+        function updateProgress() {
+            const completed = Object.keys(responses).length;
+            const percentage = (completed / TOTAL_TASKS) * 100;
+
+            document.getElementById('progressBar').style.width = percentage + '%';
+            document.getElementById('progressText').textContent = `${completed} / ${TOTAL_TASKS}`;
+        }
+
+        function toggleGuidelines() {
+            const content = document.getElementById('guidelinesContent');
+            const arrow = document.getElementById('guidelinesArrow');
+
+            content.classList.toggle('open');
+            arrow.textContent = content.classList.contains('open') ? '▲' : '▼';
+        }
+
+        function exportResults() {
+            const exportData = {
+                schema: SCHEMA,
+                metadata: {
+                    exported_at: new Date().toISOString(),
+                    total_tasks: TOTAL_TASKS,
+                    completed_tasks: Object.keys(responses).length,
+                    tool: 'DataLabel',
+                    version: '0.1.0',
+                },
+                responses: Object.values(responses),
+            };
+
+            const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${(SCHEMA.project_name || 'annotation').replace(/\s+/g, '_')}_results.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            showToast('导出成功!');
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 2000);
+        }
+    </script>
+</body>
+</html>
