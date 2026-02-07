@@ -2,9 +2,10 @@
 
 # DataLabel
 
-**轻量级数据标注工具 - 零服务器依赖的 HTML 标注界面**
+**轻量级数据标注工具 - 零服务器依赖的 HTML 标注界面**  
+**Lightweight, serverless HTML labeling tool for offline teams**
 
-[![PyPI](https://img.shields.io/pypi/v/datalabel?color=blue)](https://pypi.org/project/datalabel/)
+[![PyPI](https://img.shields.io/pypi/v/knowlyr-datalabel?color=blue)](https://pypi.org/project/knowlyr-datalabel/)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![MCP](https://img.shields.io/badge/MCP-4_Tools-purple.svg)](#mcp-server)
@@ -15,15 +16,30 @@
 
 ---
 
+**GitHub Topics**: `data-labeling`, `offline-first`, `html`, `iaa`, `llm`
+
 生成独立的 HTML 标注界面，无需部署服务器，浏览器直接打开即可使用。支持多标注员结果合并与一致性分析。
 
-## 核心能力
+## 核心能力 / Core Capabilities
 
 ```
 数据 Schema + 任务列表 → 生成 HTML → 浏览器标注 → 导出结果 → 合并分析
 ```
 
-### 特性一览
+### 界面预览 / UI Preview
+
+```
+├─ 指令
+│  └─ 「根据提示写一个创意故事」
+├─ 回复
+│  └─ 「很久以前...
+├─ 评分滑块 (1-5)   ├─ 复选标签
+└─ 备注文本框        └─ 快捷键提示 (J/K)
+
+示意图: `docs/images/annotator_ui.png`
+```
+
+### 特性一览 / Highlights
 
 | 特性 | 说明 |
 |------|------|
@@ -33,36 +49,41 @@
 | 🔗 **DataRecipe 集成** | 直接从 DataRecipe 分析结果生成标注界面 |
 | 🤖 **MCP 支持** | 可作为 Claude 的工具使用 |
 
-### 工作流
+### 工作流 / Workflow
 
 | 步骤 | 命令 | 产出 |
 |------|------|------|
-| 1️⃣ 生成界面 | `datalabel generate` | `annotator.html` |
+| 1️⃣ 生成界面 | `knowlyr-datalabel generate` | `annotator.html` |
 | 2️⃣ 分发标注 | 发送 HTML 给标注员 | 浏览器中完成标注 |
 | 3️⃣ 收集结果 | 标注员导出 JSON | `annotator_*.json` |
-| 4️⃣ 合并分析 | `datalabel merge` | `merged.json` + 一致性报告 |
+| 4️⃣ 合并分析 | `knowlyr-datalabel merge` | `merged.json` + 一致性报告 |
 
-## 安装
+> 推荐实践：
+> - 将 `annotator.html` 与 `README.md` 一起存放，方便标注员查阅指南。
+> - 要求标注员使用 `导出 -> {姓名}_{版本}.json`，方便溯源。
+> - 建议将导出的 JSON 存入版本库或对象存储，并通过 PR 进行审核。
+
+## 安装 / Installation
 
 ```bash
-pip install datalabel
+pip install knowlyr-datalabel
 ```
 
 可选依赖：
 
 ```bash
-pip install datalabel[mcp]      # MCP 服务器
-pip install datalabel[dev]      # 开发依赖
-pip install datalabel[all]      # 全部功能
+pip install knowlyr-datalabel[mcp]      # MCP 服务器
+pip install knowlyr-datalabel[dev]      # 开发依赖
+pip install knowlyr-datalabel[all]      # 全部功能
 ```
 
-## 快速开始
+## 快速开始 / Quick Start
 
-### 从 DataRecipe 分析结果生成
+### 从 DataRecipe 分析结果生成 / From DataRecipe Outputs
 
 ```bash
 # 从 DataRecipe 分析输出目录生成标注界面
-datalabel generate ./analysis_output/my_dataset/
+knowlyr-datalabel generate ./analysis_output/my_dataset/
 ```
 
 <details>
@@ -78,14 +99,19 @@ datalabel generate ./analysis_output/my_dataset/
 
 </details>
 
-### 从自定义 Schema 创建
+生成的 `reports/merge_report.md` 包含：
+- 每个任务的多标注源详情与冲突原因
+- 需要人工复核的条目列表
+- IAA 指标（整体一致率 + pairwise 矩阵）
+
+### 从自定义 Schema 创建 / From Custom Schema
 
 ```bash
 # 从 Schema 和任务文件创建标注界面
-datalabel create schema.json tasks.json -o annotator.html
+knowlyr-datalabel create schema.json tasks.json -o annotator.html
 
 # 附带标注指南
-datalabel create schema.json tasks.json -o annotator.html -g guidelines.md
+knowlyr-datalabel create schema.json tasks.json -o annotator.html -g guidelines.md
 ```
 
 <details>
@@ -108,18 +134,20 @@ datalabel create schema.json tasks.json -o annotator.html -g guidelines.md
 
 </details>
 
+> IAA 解释：完全一致率 <40% 时通常表示标注指南存在歧义，建议回顾培训或同步口径。
+
 ---
 
-## 结果合并
+## 结果合并 / Result Aggregation
 
-### 合并多个标注员结果
+### 合并多个标注员结果 / Merge Annotators
 
 ```bash
 # 合并三个标注员的结果
-datalabel merge ann1.json ann2.json ann3.json -o merged.json
+knowlyr-datalabel merge ann1.json ann2.json ann3.json -o merged.json
 
 # 使用不同的合并策略
-datalabel merge *.json -o merged.json --strategy average
+knowlyr-datalabel merge *.json -o merged.json --strategy average
 ```
 
 <details>
@@ -137,7 +165,7 @@ datalabel merge *.json -o merged.json --strategy average
 
 </details>
 
-### 合并策略
+### 合并策略 / Strategies
 
 | 策略 | 说明 | 适用场景 |
 |------|------|----------|
@@ -145,10 +173,10 @@ datalabel merge *.json -o merged.json --strategy average
 | `average` | 取所有分数的平均值 | 连续评分 |
 | `strict` | 仅当所有人一致时才确定，否则标记需审核 | 高质量要求 |
 
-### 计算标注一致性 (IAA)
+### 计算标注一致性 (IAA) / IAA Metrics
 
 ```bash
-datalabel iaa ann1.json ann2.json ann3.json
+knowlyr-datalabel iaa ann1.json ann2.json ann3.json
 ```
 
 <details>
@@ -173,9 +201,9 @@ ann3.json        68.0%      75.0%     100.0%
 
 ---
 
-## 数据格式
+## 数据格式 / Data Formats
 
-### 任务格式
+### 任务格式 / Task Schema
 
 ```json
 {
@@ -191,7 +219,7 @@ ann3.json        68.0%      75.0%     100.0%
 }
 ```
 
-### 标注结果格式
+### 标注结果格式 / Result Schema
 
 ```json
 {
@@ -211,7 +239,7 @@ ann3.json        68.0%      75.0%     100.0%
 
 ---
 
-## MCP Server
+## MCP Server / Claude Integration
 
 在 Claude Desktop / Claude Code 中直接使用。
 
@@ -222,7 +250,7 @@ ann3.json        68.0%      75.0%     100.0%
 ```json
 {
   "mcpServers": {
-    "datalabel": {
+    "knowlyr-datalabel": {
       "command": "uv",
       "args": ["--directory", "/path/to/data-label", "run", "python", "-m", "datalabel.mcp_server"]
     }
@@ -285,16 +313,16 @@ DataLabel 是 Data Pipeline 生态的标注组件：
 
 ```bash
 # 1. DataRecipe: 分析数据集，生成 Schema 和样例
-datarecipe deep-analyze tencent/CL-bench -o ./output
+knowlyr-datarecipe deep-analyze tencent/CL-bench -o ./output
 
 # 2. DataLabel: 生成标注界面，人工标注/校准种子数据
-datalabel generate ./output/tencent_CL-bench/
+knowlyr-datalabel generate ./output/tencent_CL-bench/
 
 # 3. DataSynth: 基于种子数据批量合成
-datasynth generate ./output/tencent_CL-bench/ -n 1000
+knowlyr-datasynth generate ./output/tencent_CL-bench/ -n 1000
 
 # 4. DataCheck: 质量检查
-datacheck validate ./output/tencent_CL-bench/
+knowlyr-datacheck validate ./output/tencent_CL-bench/
 ```
 
 ### 四合一 MCP 配置
@@ -302,19 +330,19 @@ datacheck validate ./output/tencent_CL-bench/
 ```json
 {
   "mcpServers": {
-    "datarecipe": {
+    "knowlyr-datarecipe": {
       "command": "uv",
-      "args": ["--directory", "/path/to/data-recipe", "run", "datarecipe-mcp"]
+      "args": ["--directory", "/path/to/data-recipe", "run", "knowlyr-datarecipe-mcp"]
     },
-    "datalabel": {
+    "knowlyr-datalabel": {
       "command": "uv",
       "args": ["--directory", "/path/to/data-label", "run", "python", "-m", "datalabel.mcp_server"]
     },
-    "datasynth": {
+    "knowlyr-datasynth": {
       "command": "uv",
       "args": ["--directory", "/path/to/data-synth", "run", "python", "-m", "datasynth.mcp_server"]
     },
-    "datacheck": {
+    "knowlyr-datacheck": {
       "command": "uv",
       "args": ["--directory", "/path/to/data-check", "run", "python", "-m", "datacheck.mcp_server"]
     }
@@ -328,11 +356,11 @@ datacheck validate ./output/tencent_CL-bench/
 
 | 命令 | 功能 |
 |------|------|
-| `datalabel generate <dir>` | 从 DataRecipe 分析结果生成标注界面 |
-| `datalabel create <schema> <tasks> -o <out>` | 从自定义 Schema 创建标注界面 |
-| `datalabel merge <files...> -o <out>` | 合并多个标注结果 |
-| `datalabel merge <files...> -s <strategy>` | 指定合并策略 |
-| `datalabel iaa <files...>` | 计算标注员间一致性 |
+| `knowlyr-datalabel generate <dir>` | 从 DataRecipe 分析结果生成标注界面 |
+| `knowlyr-datalabel create <schema> <tasks> -o <out>` | 从自定义 Schema 创建标注界面 |
+| `knowlyr-datalabel merge <files...> -o <out>` | 合并多个标注结果 |
+| `knowlyr-datalabel merge <files...> -s <strategy>` | 指定合并策略 |
+| `knowlyr-datalabel iaa <files...>` | 计算标注员间一致性 |
 
 ---
 
@@ -388,6 +416,24 @@ src/datalabel/
 ## License
 
 [MIT](LICENSE)
+
+---
+
+## AI Data Pipeline 生态
+
+> 5 个工具覆盖 AI 数据工程全流程，均支持 CLI + MCP，可独立使用也可组合成流水线。
+
+| Tool | Description | Link |
+|------|-------------|------|
+| **AI Dataset Radar** | Competitive intelligence for AI training datasets | [GitHub](https://github.com/liuxiaotong/ai-dataset-radar) |
+| **DataRecipe** | Reverse-engineer datasets into annotation specs & cost models | [GitHub](https://github.com/liuxiaotong/data-recipe) |
+| **DataSynth** | Seed-to-scale synthetic data generation | [GitHub](https://github.com/liuxiaotong/data-synth) |
+| **DataLabel** | Lightweight, serverless HTML labeling tool | You are here |
+| **DataCheck** | Automated quality checks & anomaly detection | [GitHub](https://github.com/liuxiaotong/data-check) |
+
+```
+Radar (发现) → Recipe (分析) → Synth (合成) → Label (标注) → Check (质检)
+```
 
 ---
 
