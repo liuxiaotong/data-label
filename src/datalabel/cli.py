@@ -25,9 +25,10 @@ def main():
 @main.command()
 @click.argument("analysis_dir", type=click.Path(exists=True))
 @click.option(
-    "-o", "--output",
+    "-o",
+    "--output",
     type=click.Path(),
-    help="输出文件路径 (默认: analysis_dir/10_标注工具/annotator.html)"
+    help="输出文件路径 (默认: analysis_dir/10_标注工具/annotator.html)",
 )
 def generate(analysis_dir: str, output: Optional[str]):
     """从 DataRecipe 分析结果生成标注界面
@@ -45,7 +46,7 @@ def generate(analysis_dir: str, output: Optional[str]):
     if result.success:
         click.echo(f"✓ 生成成功: {result.output_path}")
         click.echo(f"  任务数量: {result.task_count}")
-        click.echo(f"\n在浏览器中打开此文件即可开始标注")
+        click.echo("\n在浏览器中打开此文件即可开始标注")
     else:
         click.echo(f"✗ 生成失败: {result.error}", err=True)
         sys.exit(1)
@@ -54,22 +55,11 @@ def generate(analysis_dir: str, output: Optional[str]):
 @main.command()
 @click.argument("schema_file", type=click.Path(exists=True))
 @click.argument("tasks_file", type=click.Path(exists=True))
+@click.option("-o", "--output", type=click.Path(), required=True, help="输出 HTML 文件路径")
 @click.option(
-    "-o", "--output",
-    type=click.Path(),
-    required=True,
-    help="输出 HTML 文件路径"
+    "-g", "--guidelines", type=click.Path(exists=True), help="标注指南文件路径 (Markdown 格式)"
 )
-@click.option(
-    "-g", "--guidelines",
-    type=click.Path(exists=True),
-    help="标注指南文件路径 (Markdown 格式)"
-)
-@click.option(
-    "-t", "--title",
-    type=str,
-    help="标注界面标题"
-)
+@click.option("-t", "--title", type=str, help="标注界面标题")
 def create(
     schema_file: str,
     tasks_file: str,
@@ -101,7 +91,7 @@ def create(
     if guidelines:
         guidelines_content = Path(guidelines).read_text(encoding="utf-8")
 
-    click.echo(f"正在创建标注界面...")
+    click.echo("正在创建标注界面...")
     click.echo(f"  Schema: {schema_file}")
     click.echo(f"  任务数: {len(tasks)}")
 
@@ -116,7 +106,7 @@ def create(
 
     if result.success:
         click.echo(f"✓ 创建成功: {result.output_path}")
-        click.echo(f"\n在浏览器中打开此文件即可开始标注")
+        click.echo("\n在浏览器中打开此文件即可开始标注")
     else:
         click.echo(f"✗ 创建失败: {result.error}", err=True)
         sys.exit(1)
@@ -124,17 +114,13 @@ def create(
 
 @main.command()
 @click.argument("result_files", nargs=-1, type=click.Path(exists=True), required=True)
+@click.option("-o", "--output", type=click.Path(), required=True, help="合并结果输出路径")
 @click.option(
-    "-o", "--output",
-    type=click.Path(),
-    required=True,
-    help="合并结果输出路径"
-)
-@click.option(
-    "-s", "--strategy",
+    "-s",
+    "--strategy",
     type=click.Choice(["majority", "average", "strict"]),
     default="majority",
-    help="合并策略 (默认: majority)"
+    help="合并策略 (默认: majority)",
 )
 def merge(result_files: tuple, output: str, strategy: str):
     """合并多个标注员的标注结果
@@ -187,20 +173,20 @@ def iaa(result_files: tuple):
         click.echo(f"✗ 计算失败: {metrics['error']}", err=True)
         sys.exit(1)
 
-    click.echo(f"\n标注员间一致性 (IAA) 指标:")
+    click.echo("\n标注员间一致性 (IAA) 指标:")
     click.echo(f"  标注员数: {metrics['annotator_count']}")
     click.echo(f"  共同任务: {metrics['common_tasks']}")
     click.echo(f"  完全一致率: {metrics['exact_agreement_rate']:.1%}")
 
-    click.echo(f"\n两两一致矩阵:")
-    files = [Path(f).name for f in metrics['files']]
+    click.echo("\n两两一致矩阵:")
+    files = [Path(f).name for f in metrics["files"]]
 
     # 打印表头
     header = "          " + "  ".join(f"{f[:8]:>8}" for f in files)
     click.echo(header)
 
     # 打印矩阵
-    for i, row in enumerate(metrics['pairwise_agreement']):
+    for i, row in enumerate(metrics["pairwise_agreement"]):
         row_str = f"{files[i][:8]:>8}  " + "  ".join(f"{v:>8.1%}" for v in row)
         click.echo(row_str)
 

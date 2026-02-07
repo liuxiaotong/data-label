@@ -29,6 +29,24 @@ htmlcov/
 *.html
 !src/datalabel/templates/*.html
 
+# Environment
+.env
+.env.local
+
 # OS
 .DS_Store
 Thumbs.db
+
+# ===================
+# Supplemented common patterns
+# ===================
+
+# Python wheels
+*.whl
+
+# Virtual environments
+env/
+
+# Linting / type checking
+.mypy_cache/
+.ruff_cache/

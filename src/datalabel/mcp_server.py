@@ -1,13 +1,13 @@
 """DataLabel MCP Server - Model Context Protocol 服务."""
 
 import json
-from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 try:
     from mcp.server import Server
     from mcp.server.stdio import stdio_server
     from mcp.types import Tool, TextContent
+
     HAS_MCP = True
 except ImportError:
     HAS_MCP = False
@@ -129,18 +129,17 @@ def create_server() -> "Server":
             )
 
             if result.success:
-                return [TextContent(
-                    type="text",
-                    text=f"标注界面已生成:\n"
-                         f"- 输出路径: {result.output_path}\n"
-                         f"- 任务数量: {result.task_count}\n\n"
-                         f"在浏览器中打开此文件即可开始标注。"
-                )]
+                return [
+                    TextContent(
+                        type="text",
+                        text=f"标注界面已生成:\n"
+                        f"- 输出路径: {result.output_path}\n"
+                        f"- 任务数量: {result.task_count}\n\n"
+                        f"在浏览器中打开此文件即可开始标注。",
+                    )
+                ]
             else:
-                return [TextContent(
-                    type="text",
-                    text=f"生成失败: {result.error}"
-                )]
+                return [TextContent(type="text", text=f"生成失败: {result.error}")]
 
         elif name == "create_annotator":
             result = generator.generate(
@@ -152,18 +151,17 @@ def create_server() -> "Server":
             )
 
             if result.success:
-                return [TextContent(
-                    type="text",
-                    text=f"标注界面已创建:\n"
-                         f"- 输出路径: {result.output_path}\n"
-                         f"- 任务数量: {result.task_count}\n\n"
-                         f"在浏览器中打开此文件即可开始标注。"
-                )]
+                return [
+                    TextContent(
+                        type="text",
+                        text=f"标注界面已创建:\n"
+                        f"- 输出路径: {result.output_path}\n"
+                        f"- 任务数量: {result.task_count}\n\n"
+                        f"在浏览器中打开此文件即可开始标注。",
+                    )
+                ]
             else:
-                return [TextContent(
-                    type="text",
-                    text=f"创建失败: {result.error}"
-                )]
+                return [TextContent(type="text", text=f"创建失败: {result.error}")]
 
         elif name == "merge_annotations":
             result = merger.merge(
@@ -173,44 +171,39 @@ def create_server() -> "Server":
             )
 
             if result.success:
-                return [TextContent(
-                    type="text",
-                    text=f"标注结果已合并:\n"
-                         f"- 输出路径: {result.output_path}\n"
-                         f"- 任务总数: {result.total_tasks}\n"
-                         f"- 标注员数: {result.annotator_count}\n"
-                         f"- 一致率: {result.agreement_rate:.1%}\n"
-                         f"- 冲突数: {len(result.conflicts)}"
-                )]
+                return [
+                    TextContent(
+                        type="text",
+                        text=f"标注结果已合并:\n"
+                        f"- 输出路径: {result.output_path}\n"
+                        f"- 任务总数: {result.total_tasks}\n"
+                        f"- 标注员数: {result.annotator_count}\n"
+                        f"- 一致率: {result.agreement_rate:.1%}\n"
+                        f"- 冲突数: {len(result.conflicts)}",
+                    )
+                ]
             else:
-                return [TextContent(
-                    type="text",
-                    text=f"合并失败: {result.error}"
-                )]
+                return [TextContent(type="text", text=f"合并失败: {result.error}")]
 
         elif name == "calculate_iaa":
             metrics = merger.calculate_iaa(arguments["result_files"])
 
             if "error" in metrics:
-                return [TextContent(
-                    type="text",
-                    text=f"计算失败: {metrics['error']}"
-                )]
+                return [TextContent(type="text", text=f"计算失败: {metrics['error']}")]
 
-            return [TextContent(
-                type="text",
-                text=f"标注员间一致性 (IAA) 指标:\n"
-                     f"- 标注员数: {metrics['annotator_count']}\n"
-                     f"- 共同任务: {metrics['common_tasks']}\n"
-                     f"- 完全一致率: {metrics['exact_agreement_rate']:.1%}\n\n"
-                     f"详细指标:\n{json.dumps(metrics, indent=2, ensure_ascii=False)}"
-            )]
+            return [
+                TextContent(
+                    type="text",
+                    text=f"标注员间一致性 (IAA) 指标:\n"
+                    f"- 标注员数: {metrics['annotator_count']}\n"
+                    f"- 共同任务: {metrics['common_tasks']}\n"
+                    f"- 完全一致率: {metrics['exact_agreement_rate']:.1%}\n\n"
+                    f"详细指标:\n{json.dumps(metrics, indent=2, ensure_ascii=False)}",
+                )
+            ]
 
         else:
-            return [TextContent(
-                type="text",
-                text=f"未知工具: {name}"
-            )]
+            return [TextContent(type="text", text=f"未知工具: {name}")]
 
     return server
 
@@ -228,6 +221,7 @@ async def serve():
 def main():
     """主入口."""
     import asyncio
+
     asyncio.run(serve())
 
 

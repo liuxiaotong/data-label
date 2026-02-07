@@ -4,7 +4,7 @@ import json
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 from collections import defaultdict
 
 
@@ -54,11 +54,13 @@ class ResultMerger:
             for file_path in result_files:
                 with open(file_path, "r", encoding="utf-8") as f:
                     data = json.load(f)
-                    all_results.append({
-                        "file": file_path,
-                        "metadata": data.get("metadata", {}),
-                        "responses": {r["task_id"]: r for r in data.get("responses", [])},
-                    })
+                    all_results.append(
+                        {
+                            "file": file_path,
+                            "metadata": data.get("metadata", {}),
+                            "responses": {r["task_id"]: r for r in data.get("responses", [])},
+                        }
+                    )
 
             result.annotator_count = len(all_results)
 
@@ -91,11 +93,15 @@ class ResultMerger:
                     if len(set(scores)) == 1:
                         agreements += 1
                     else:
-                        conflicts.append({
-                            "task_id": task_id,
-                            "scores": scores,
-                            "annotators": [ar["file"] for ar in all_results if task_id in ar["responses"]],
-                        })
+                        conflicts.append(
+                            {
+                                "task_id": task_id,
+                                "scores": scores,
+                                "annotators": [
+                                    ar["file"] for ar in all_results if task_id in ar["responses"]
+                                ],
+                            }
+                        )
 
                 # Merge based on strategy
                 merged = self._merge_responses(task_responses, strategy)
@@ -198,10 +204,12 @@ class ResultMerger:
         for file_path in result_files:
             with open(file_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
-                all_results.append({
-                    "file": file_path,
-                    "responses": {r["task_id"]: r for r in data.get("responses", [])},
-                })
+                all_results.append(
+                    {
+                        "file": file_path,
+                        "responses": {r["task_id"]: r for r in data.get("responses", [])},
+                    }
+                )
 
         if len(all_results) < 2:
             return {"error": "Need at least 2 annotators to calculate IAA"}
@@ -240,9 +248,10 @@ class ResultMerger:
                     row.append(1.0)
                 else:
                     agreements = sum(
-                        1 for task_id in common_tasks
-                        if all_results[i]["responses"][task_id]["score"] ==
-                           all_results[j]["responses"][task_id]["score"]
+                        1
+                        for task_id in common_tasks
+                        if all_results[i]["responses"][task_id]["score"]
+                        == all_results[j]["responses"][task_id]["score"]
                     )
                     row.append(agreements / total if total > 0 else 0)
             pairwise_agreement.append(row)

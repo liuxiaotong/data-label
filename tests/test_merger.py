@@ -58,8 +58,10 @@ class TestResultMerger:
         with tempfile.TemporaryDirectory() as tmpdir:
             # Write result files
             files = []
-            for i, results in enumerate([annotator1_results, annotator2_results, annotator3_results]):
-                path = Path(tmpdir) / f"ann{i+1}.json"
+            for i, results in enumerate(
+                [annotator1_results, annotator2_results, annotator3_results]
+            ):
+                path = Path(tmpdir) / f"ann{i + 1}.json"
                 path.write_text(json.dumps(results))
                 files.append(str(path))
 
@@ -94,8 +96,10 @@ class TestResultMerger:
 
         with tempfile.TemporaryDirectory() as tmpdir:
             files = []
-            for i, results in enumerate([annotator1_results, annotator2_results, annotator3_results]):
-                path = Path(tmpdir) / f"ann{i+1}.json"
+            for i, results in enumerate(
+                [annotator1_results, annotator2_results, annotator3_results]
+            ):
+                path = Path(tmpdir) / f"ann{i + 1}.json"
                 path.write_text(json.dumps(results))
                 files.append(str(path))
 
@@ -113,7 +117,7 @@ class TestResultMerger:
             responses = {r["task_id"]: r for r in merged["responses"]}
 
             # TASK_002: (2 + 1 + 2) / 3 = 1.67
-            assert abs(responses["TASK_002"]["score"] - 5/3) < 0.01
+            assert abs(responses["TASK_002"]["score"] - 5 / 3) < 0.01
 
     def test_merge_strict(self, annotator1_results, annotator2_results, annotator3_results):
         """Test strict merge (only if all agree)."""
@@ -121,8 +125,10 @@ class TestResultMerger:
 
         with tempfile.TemporaryDirectory() as tmpdir:
             files = []
-            for i, results in enumerate([annotator1_results, annotator2_results, annotator3_results]):
-                path = Path(tmpdir) / f"ann{i+1}.json"
+            for i, results in enumerate(
+                [annotator1_results, annotator2_results, annotator3_results]
+            ):
+                path = Path(tmpdir) / f"ann{i + 1}.json"
                 path.write_text(json.dumps(results))
                 files.append(str(path))
 
@@ -151,8 +157,10 @@ class TestResultMerger:
 
         with tempfile.TemporaryDirectory() as tmpdir:
             files = []
-            for i, results in enumerate([annotator1_results, annotator2_results, annotator3_results]):
-                path = Path(tmpdir) / f"ann{i+1}.json"
+            for i, results in enumerate(
+                [annotator1_results, annotator2_results, annotator3_results]
+            ):
+                path = Path(tmpdir) / f"ann{i + 1}.json"
                 path.write_text(json.dumps(results))
                 files.append(str(path))
 
@@ -166,7 +174,7 @@ class TestResultMerger:
             # Only TASK_001 has full agreement (3, 3, 3)
             # TASK_002: 2, 1, 2 - no full agreement
             # TASK_003: 3, 3, 2 - no full agreement
-            assert result.agreement_rate == 1/3
+            assert result.agreement_rate == 1 / 3
 
     def test_calculate_iaa(self, annotator1_results, annotator2_results):
         """Test IAA calculation."""
@@ -175,7 +183,7 @@ class TestResultMerger:
         with tempfile.TemporaryDirectory() as tmpdir:
             files = []
             for i, results in enumerate([annotator1_results, annotator2_results]):
-                path = Path(tmpdir) / f"ann{i+1}.json"
+                path = Path(tmpdir) / f"ann{i + 1}.json"
                 path.write_text(json.dumps(results))
                 files.append(str(path))
 
@@ -186,7 +194,7 @@ class TestResultMerger:
             # TASK_001: 3, 3 - agree
             # TASK_002: 2, 1 - disagree
             # TASK_003: 3, 3 - agree
-            assert metrics["exact_agreement_rate"] == 2/3
+            assert metrics["exact_agreement_rate"] == 2 / 3
 
     def test_calculate_iaa_insufficient_annotators(self, annotator1_results):
         """Test IAA with only one annotator."""

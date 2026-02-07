@@ -1,7 +1,6 @@
 """Generate standalone HTML annotation interfaces."""
 
 import json
-import os
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -11,6 +10,7 @@ from jinja2 import Environment, PackageLoader, select_autoescape
 
 try:
     import markdown
+
     HAS_MARKDOWN = True
 except ImportError:
     HAS_MARKDOWN = False
@@ -110,10 +110,7 @@ class AnnotatorGenerator:
             schema_path = analysis_dir / "DATA_SCHEMA.json"
 
         if not schema_path.exists():
-            return GeneratorResult(
-                success=False,
-                error=f"Schema not found: {schema_path}"
-            )
+            return GeneratorResult(success=False, error=f"Schema not found: {schema_path}")
 
         with open(schema_path, "r", encoding="utf-8") as f:
             schema = json.load(f)
@@ -166,8 +163,7 @@ class AnnotatorGenerator:
         if guidelines:
             if HAS_MARKDOWN:
                 guidelines_html = markdown.markdown(
-                    guidelines,
-                    extensions=["tables", "fenced_code"]
+                    guidelines, extensions=["tables", "fenced_code"]
                 )
             else:
                 guidelines_html = f"<pre>{guidelines}</pre>"
@@ -183,11 +179,13 @@ class AnnotatorGenerator:
         prepared_tasks = []
         for i, task in enumerate(tasks):
             task_data = task.get("data", task)
-            prepared_tasks.append({
-                "id": task.get("id", f"TASK_{i+1:03d}"),
-                "data": task_data,
-                "task_type": task.get("task_type", "default"),
-            })
+            prepared_tasks.append(
+                {
+                    "id": task.get("id", f"TASK_{i + 1:03d}"),
+                    "data": task_data,
+                    "task_type": task.get("task_type", "default"),
+                }
+            )
 
         return {
             "title": title or schema.get("project_name", "DataLabel 标注"),
