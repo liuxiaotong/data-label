@@ -8,11 +8,11 @@
 [![PyPI](https://img.shields.io/pypi/v/knowlyr-datalabel?color=blue)](https://pypi.org/project/knowlyr-datalabel/)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![MCP](https://img.shields.io/badge/MCP-10_Tools%20·%206_Resources%20·%203_Prompts-purple.svg)](#mcp-server)
+[![MCP](https://img.shields.io/badge/MCP-11_Tools%20·%206_Resources%20·%203_Prompts-purple.svg)](#mcp-server)
 [![LLM](https://img.shields.io/badge/LLM-Kimi%20%7C%20OpenAI%20%7C%20Anthropic-orange.svg)](#llm-分析)
 [![Docker](https://img.shields.io/badge/Docker-ready-2496ED.svg)](#docker)
 
-[快速开始](#快速开始) · [标注类型](#标注类型) · [LLM 分析](#llm-分析) · [结果合并](#结果合并) · [IAA 指标](#计算标注一致性-iaa) · [MCP Server](#mcp-server) · [Docker](#docker) · [生态](#data-pipeline-生态)
+[快速开始](#快速开始) · [标注类型](#标注类型) · [LLM 分析](#llm-分析) · [结果合并](#结果合并) · [IAA 指标](#计算标注一致性-iaa) · [仪表盘](#仪表盘) · [MCP Server](#mcp-server) · [Docker](#docker) · [生态](#data-pipeline-生态)
 
 </div>
 
@@ -25,7 +25,7 @@
 ## 核心能力
 
 ```
-数据 Schema + 任务列表 → [LLM 预标注] → 生成 HTML → 浏览器标注 → 导出结果 → [LLM 质量分析] → 合并分析
+数据 Schema + 任务列表 → [LLM 预标注] → 生成 HTML → 浏览器标注 → 导出结果 → [LLM 质量分析] → 合并分析 → 进度仪表盘
 ```
 
 ### 特性一览
@@ -49,7 +49,8 @@
 | **LLM 自动预标注** | 使用 Kimi/OpenAI/Anthropic 自动预标注，加速标注流程 |
 | **LLM 质量分析** | 检测可疑标注、分析多标注员分歧 |
 | **LLM 指南生成** | 根据 Schema 和样例自动生成标注指南 |
-| **MCP 支持** | 10 工具 + 6 资源 + 3 Prompt 模板，可作为 Claude Desktop / Claude Code 的工具使用 |
+| **进度仪表盘** | 从标注结果生成独立 HTML 仪表盘：完成进度、分布图、一致性热力图、分歧表 |
+| **MCP 支持** | 11 工具 + 6 资源 + 3 Prompt 模板，可作为 Claude Desktop / Claude Code 的工具使用 |
 | **Docker** | 容器化运行，无需安装 Python 环境 |
 
 ### 工作流
@@ -63,6 +64,7 @@
 | 5. 收集结果 | 标注员导出 JSON/JSONL/CSV | `results_*.json` |
 | 6. 质量分析 | `knowlyr-datalabel quality schema.json results_*.json -o report.json` | `report.json` (可选) |
 | 7. 合并分析 | `knowlyr-datalabel merge results_*.json -o merged.json` | `merged.json` + IAA 报告 |
+| 8. 进度仪表盘 | `knowlyr-datalabel dashboard results_*.json -o dashboard.html` | `dashboard.html` |
 
 ## 安装
 
@@ -338,6 +340,36 @@ ann3.json     68%/κ0.52  75%/κ0.63     ---
 
 ---
 
+## 仪表盘
+
+从标注结果文件生成独立 HTML 仪表盘页面，直观查看标注进度和质量：
+
+```bash
+# 基本用法
+knowlyr-datalabel dashboard ann1.json ann2.json -o dashboard.html
+
+# 自定义标题
+knowlyr-datalabel dashboard ann1.json ann2.json -o dashboard.html -t "项目进度"
+
+# 附带 Schema 信息
+knowlyr-datalabel dashboard ann1.json ann2.json -o dashboard.html -s schema.json
+```
+
+仪表盘包含 6 个区块：
+
+| 区块 | 说明 |
+|------|------|
+| **概览卡片** | 总任务数、标注员数、平均完成率、一致率 |
+| **标注员进度** | 每位标注员的完成进度条 |
+| **标注值分布** | SVG 柱状图展示标注值分布 |
+| **一致性热力图** | Cohen's Kappa 两两矩阵 + Fleiss' Kappa + Krippendorff's Alpha |
+| **标注分歧表** | 存在分歧的任务列表（支持搜索过滤） |
+| **时间分析** | 按天统计标注量趋势图（需要时间戳） |
+
+生成的 HTML 同样零依赖、离线可用，支持暗黑模式。
+
+---
+
 ## 导入导出
 
 ### 浏览器端导出
@@ -413,6 +445,10 @@ docker run --rm -v $(pwd):/data knowlyr-datalabel \
 docker run --rm -v $(pwd):/data knowlyr-datalabel \
   iaa ann1.json ann2.json
 
+# 生成仪表盘
+docker run --rm -v $(pwd):/data knowlyr-datalabel \
+  dashboard ann1.json ann2.json -o dashboard.html
+
 # 格式转换
 docker run --rm -v $(pwd):/data knowlyr-datalabel \
   export results.json -o results.csv -f csv
@@ -422,7 +458,7 @@ docker run --rm -v $(pwd):/data knowlyr-datalabel \
 
 ## MCP Server
 
-在 Claude Desktop / Claude Code 中直接使用 DataLabel 功能。提供 **10 个工具**、**6 个资源** 和 **3 个 Prompt 模板**。
+在 Claude Desktop / Claude Code 中直接使用 DataLabel 功能。提供 **11 个工具**、**6 个资源** 和 **3 个 Prompt 模板**。
 
 ### 配置
 
@@ -439,7 +475,7 @@ docker run --rm -v $(pwd):/data knowlyr-datalabel \
 }
 ```
 
-### Tools (10)
+### Tools (11)
 
 | 工具 | 功能 |
 |------|------|
@@ -450,6 +486,7 @@ docker run --rm -v $(pwd):/data knowlyr-datalabel \
 | `validate_schema` | 验证 Schema 和任务数据格式 |
 | `export_results` | 将标注结果导出为 JSON/JSONL/CSV |
 | `import_tasks` | 从 JSON/JSONL/CSV 导入任务数据 |
+| `generate_dashboard` | 从标注结果生成进度仪表盘 HTML |
 | `llm_prelabel` | 使用 LLM 自动预标注任务数据 |
 | `llm_quality_analysis` | 使用 LLM 分析标注质量和分歧 |
 | `llm_gen_guidelines` | 使用 LLM 生成标注指南 |
@@ -518,6 +555,9 @@ python examples/llm_workflow.py
 | `knowlyr-datalabel merge <files...> -o <out>` | 合并标注结果 |
 | `knowlyr-datalabel merge ... -s majority\|average\|strict` | 指定合并策略 |
 | `knowlyr-datalabel iaa <files...>` | 计算标注一致性 |
+| `knowlyr-datalabel dashboard <files...> -o <out>` | 生成标注进度仪表盘 |
+| `knowlyr-datalabel dashboard ... -s schema.json` | 附带 Schema 信息 |
+| `knowlyr-datalabel dashboard ... -t "标题"` | 自定义仪表盘标题 |
 | `knowlyr-datalabel validate <schema> [-t tasks]` | 验证 Schema/任务格式 |
 | `knowlyr-datalabel export <file> -o <out> -f json\|jsonl\|csv` | 导出格式转换 |
 | `knowlyr-datalabel import-tasks <file> -o <out> [-f format]` | 导入任务数据 |
@@ -588,6 +628,22 @@ if result.warnings:
     print("警告:", result.warnings)
 ```
 
+### 生成仪表盘
+
+```python
+from datalabel import DashboardGenerator
+
+gen = DashboardGenerator()
+result = gen.generate(
+    result_files=["ann1.json", "ann2.json"],
+    output_path="dashboard.html",
+    title="项目进度仪表盘",
+)
+
+print(f"标注员数: {result.annotator_count}")
+print(f"完成率: {result.overall_completion:.1%}")
+```
+
 ### LLM 自动预标注
 
 ```python
@@ -631,19 +687,21 @@ result = gen.generate(schema=schema, tasks=tasks, output_path="guidelines.md")
 
 ```
 src/datalabel/
-├── __init__.py           # 包入口 (AnnotatorGenerator, ResultMerger, SchemaValidator)
+├── __init__.py           # 包入口 (AnnotatorGenerator, DashboardGenerator, ResultMerger, SchemaValidator)
 ├── generator.py          # HTML 标注界面生成器
+├── dashboard.py          # 标注进度仪表盘生成器
 ├── merger.py             # 标注结果合并 & IAA (Cohen's/Fleiss' Kappa, Krippendorff's Alpha)
 ├── validator.py          # Schema & 任务数据校验
-├── cli.py                # CLI 命令行工具 (10 命令)
-├── mcp_server/           # MCP Server (10 工具, 6 资源, 3 Prompts)
+├── cli.py                # CLI 命令行工具 (11 命令)
+├── mcp_server/           # MCP Server (11 工具, 6 资源, 3 Prompts)
 │   ├── __init__.py       # 包入口
 │   ├── _server.py        # 服务器创建与启动
 │   ├── _tools.py         # 工具定义与处理函数
 │   ├── _resources.py     # 资源定义 (Schema 模板)
 │   └── _prompts.py       # Prompt 模板定义
 ├── templates/
-│   └── annotator.html    # Jinja2 HTML 模板 (暗黑模式, 统计面板, 撤销, 快捷键, 批量操作)
+│   ├── annotator.html    # Jinja2 标注界面模板 (暗黑模式, 统计面板, 撤销, 快捷键, 批量操作)
+│   └── dashboard.html    # Jinja2 仪表盘模板 (进度, 分布图, 热力图, 分歧表)
 └── llm/                  # LLM 分析模块
     ├── __init__.py       # 统一导出
     ├── client.py         # 多提供商 LLM 客户端 (Kimi/OpenAI/Anthropic)
@@ -652,7 +710,7 @@ src/datalabel/
     ├── quality.py        # 标注质量分析
     └── guidelines.py     # 标注指南生成
 
-tests/                    # 232 个测试
+tests/                    # 296 个测试
 examples/                 # 可运行示例脚本 + 示例数据
 Dockerfile                # Docker 容器化支持
 ```
@@ -689,9 +747,10 @@ knowlyr-datalabel gen-guidelines schema.json -t tasks.json -o guide.md -p moonsh
 knowlyr-datalabel prelabel schema.json tasks.json -o pre.json -p moonshot
 knowlyr-datalabel create schema.json tasks.json -o annotator.html -g guide.md
 
-# 3. DataLabel: 收集结果 + LLM 质量分析 + 合并
+# 3. DataLabel: 收集结果 + LLM 质量分析 + 合并 + 仪表盘
 knowlyr-datalabel quality schema.json ann1.json ann2.json -o report.json
 knowlyr-datalabel merge ann1.json ann2.json -o merged.json
+knowlyr-datalabel dashboard ann1.json ann2.json -o dashboard.html
 
 # 4. DataSynth: 基于种子数据批量合成
 knowlyr-datasynth generate ./output/tencent_CL-bench/ -n 1000
