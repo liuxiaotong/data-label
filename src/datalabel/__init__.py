@@ -3,7 +3,7 @@
 生成独立的 HTML 标注界面，无需服务器，浏览器直接打开即可使用。
 """
 
-__version__ = "0.2.0"
+__version__ = "0.2.1"
 
 from datalabel.generator import AnnotatorGenerator
 from datalabel.merger import ResultMerger
