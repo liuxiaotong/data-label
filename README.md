@@ -1,15 +1,17 @@
 <div align="center">
 
-# DataLabel
+<h1>🏷️ DataLabel</h1>
 
-**轻量级数据标注工具 — 零服务器依赖的 HTML 标注界面**
-**Lightweight, serverless HTML labeling tool for offline annotation teams**
+<p><strong>轻量级数据标注工具 — 零服务器依赖的 HTML 标注界面</strong><br/>
+<em>Lightweight, serverless HTML labeling tool for offline annotation teams</em></p>
 
 [![PyPI](https://img.shields.io/pypi/v/knowlyr-datalabel?color=blue)](https://pypi.org/project/knowlyr-datalabel/)
-[![CI](https://github.com/liuxiaotong/data-label/actions/workflows/ci.yml/badge.svg)](https://github.com/liuxiaotong/data-label/actions/workflows/ci.yml)
-[![codecov](https://codecov.io/gh/liuxiaotong/data-label/graph/badge.svg)](https://codecov.io/gh/liuxiaotong/data-label)
+[![Downloads](https://img.shields.io/pypi/dm/knowlyr-datalabel?color=green)](https://pypi.org/project/knowlyr-datalabel/)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+<br/>
+[![CI](https://github.com/liuxiaotong/data-label/actions/workflows/ci.yml/badge.svg)](https://github.com/liuxiaotong/data-label/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/liuxiaotong/data-label/graph/badge.svg)](https://codecov.io/gh/liuxiaotong/data-label)
 [![MCP](https://img.shields.io/badge/MCP-11_Tools%20·%206_Resources%20·%203_Prompts-purple.svg)](#mcp-server)
 [![LLM](https://img.shields.io/badge/LLM-Kimi%20%7C%20OpenAI%20%7C%20Anthropic-orange.svg)](#llm-分析)
 [![Docker](https://img.shields.io/badge/Docker-ready-2496ED.svg)](#docker)
@@ -20,9 +22,10 @@
 
 ---
 
-**GitHub Topics**: `data-labeling`, `annotation`, `offline-first`, `mcp`, `ai-data-pipeline`
-
-生成独立的 HTML 标注界面，无需部署服务器，浏览器直接打开即可使用。支持 5 种标注类型、暗黑模式、撤销、统计面板、多格式导入导出，以及多标注员结果合并与一致性分析。内置 LLM 分析能力（Kimi/Moonshot、OpenAI、Anthropic），支持自动预标注、标注质量审核、标注指南生成。可从标注结果一键生成进度仪表盘（完成率、分布图、一致性热力图、分歧表）。
+> 🎯 **零依赖部署** 生成独立 HTML，浏览器直接打开，离线可用
+> 📝 **5 种标注类型** 评分 · 单选 · 多选 · 文本 · 排序，暗黑模式 + 快捷键
+> 🤖 **LLM 智能** 自动预标注 + 质量分析 + 指南生成（Kimi / OpenAI / Anthropic）
+> 📊 **标注管理** 多标注员合并 + IAA 一致性分析 + 进度仪表盘
 
 ## 核心能力
 
@@ -74,7 +77,7 @@
 pip install knowlyr-datalabel
 ```
 
-可选依赖：
+<details><summary>📦 可选依赖</summary>
 
 ```bash
 pip install knowlyr-datalabel[mcp]      # MCP 服务器
@@ -83,6 +86,8 @@ pip install knowlyr-datalabel[llm-all]  # LLM 分析 (含 Anthropic)
 pip install knowlyr-datalabel[dev]      # 开发依赖 (pytest, ruff)
 pip install knowlyr-datalabel[all]      # 全部功能
 ```
+
+</details>
 
 ## 快速开始
 
@@ -151,6 +156,8 @@ DataLabel 支持 5 种标注类型，通过 Schema 中的 `annotation_config` �
 }
 ```
 
+<details><summary>📝 其他标注类型配置</summary>
+
 ### 2. 单选 (single_choice)
 
 ```json
@@ -209,6 +216,8 @@ DataLabel 支持 5 种标注类型，通过 Schema 中的 `annotation_config` �
   }
 }
 ```
+
+</details>
 
 ---
 
@@ -372,6 +381,8 @@ knowlyr-datalabel dashboard ann1.json ann2.json -o dashboard.html -s schema.json
 
 ---
 
+<details><summary>📤 导入导出</summary>
+
 ## 导入导出
 
 ### 浏览器端导出
@@ -419,6 +430,8 @@ knowlyr-datalabel import-tasks data.txt -o tasks.json -f jsonl
 }
 ```
 
+</details>
+
 ---
 
 ## Docker
@@ -428,6 +441,8 @@ knowlyr-datalabel import-tasks data.txt -o tasks.json -f jsonl
 ```bash
 docker build -t knowlyr-datalabel .
 ```
+
+<details><summary>🐳 Docker 命令</summary>
 
 ### 使用
 
@@ -456,13 +471,15 @@ docker run --rm -v $(pwd):/data knowlyr-datalabel \
   export results.json -o results.csv -f csv
 ```
 
+</details>
+
 ---
 
 ## MCP Server
 
 在 Claude Desktop / Claude Code 中直接使用 DataLabel 功能。提供 **11 个工具**、**6 个资源** 和 **3 个 Prompt 模板**。
 
-### 配置
+<details><summary>⚙️ 配置</summary>
 
 添加到 `~/Library/Application Support/Claude/claude_desktop_config.json`：
 
@@ -476,6 +493,8 @@ docker run --rm -v $(pwd):/data knowlyr-datalabel \
   }
 }
 ```
+
+</details>
 
 ### Tools (11)
 
@@ -514,6 +533,8 @@ docker run --rm -v $(pwd):/data knowlyr-datalabel \
 
 ---
 
+<details><summary>📂 示例</summary>
+
 ## 示例
 
 `examples/` 目录包含可直接运行的示例脚本：
@@ -543,7 +564,11 @@ python examples/llm_workflow.py
 | `results_annotator1.json` | 标注员 1 结果 |
 | `results_annotator2.json` | 标注员 2 结果 |
 
+</details>
+
 ---
+
+<details><summary>📖 命令参考</summary>
 
 ## 命令参考
 
@@ -567,7 +592,11 @@ python examples/llm_workflow.py
 | `knowlyr-datalabel quality <schema> <results...> [-o report]` | LLM 标注质量分析 |
 | `knowlyr-datalabel gen-guidelines <schema> -o <out> [-t tasks] [-l zh\|en]` | LLM 标注指南生成 |
 
+</details>
+
 ---
+
+<details><summary>🐍 Python API</summary>
 
 ## API 使用
 
@@ -683,7 +712,11 @@ gen = GuidelinesGenerator(client=client)
 result = gen.generate(schema=schema, tasks=tasks, output_path="guidelines.md")
 ```
 
+</details>
+
 ---
+
+<details><summary>🏗️ 项目架构</summary>
 
 ## 项目架构
 
@@ -718,11 +751,15 @@ examples/                 # 可运行示例脚本 + 示例数据
 Dockerfile                # Docker 容器化支持
 ```
 
+</details>
+
 ---
 
 ## Data Pipeline 生态
 
 DataLabel 是 Data Pipeline 生态的标注组件：
+
+<details><summary>🗺️ 生态架构图</summary>
 
 ```mermaid
 graph LR
@@ -738,6 +775,8 @@ graph LR
     Recorder --> Reward["⭐ Reward<br/>过程打分"]
     style Label fill:#0969da,color:#fff,stroke:#0969da
 ```
+
+</details>
 
 ### 端到端工作流
 
@@ -776,11 +815,32 @@ knowlyr-datacheck validate ./output/tencent_CL-bench/
 
 ---
 
+## 开发
+
+```bash
+# 安装开发依赖
+pip install -e ".[all,dev]"
+
+# 运行测试 (296 个用例)
+pytest
+
+# 查看测试覆盖率
+pytest --cov=datalabel --cov-report=term-missing
+
+# 代码格式化 + lint
+ruff check src/
+ruff format src/
+```
+
+**测试覆盖**: 17 个测试文件，296 个测试用例。
+
+**CI**: GitHub Actions，支持 Python 3.10+，Codecov 覆盖率上报。Tag push 自动发布 PyPI + GitHub Release。
+
+---
+
 ## License
 
 [MIT](LICENSE)
-
----
 
 <div align="center">
 <sub><a href="https://github.com/liuxiaotong">knowlyr</a> 数据工程生态 · 轻量级零部署标注</sub>
