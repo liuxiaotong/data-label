@@ -9,6 +9,7 @@ from datalabel.mcp_server._tools import (
     handle_calculate_iaa,
     handle_create_annotator,
     handle_export_results,
+    handle_generate_annotator,
     handle_import_tasks,
     handle_merge_annotations,
     handle_validate_schema,
@@ -293,3 +294,86 @@ class TestImportTasks:
             "output_path": output,
         })
         assert "1 条" in result[0].text
+
+
+class TestGenerateAnnotator:
+    """测试 generate_annotator handler."""
+
+    def test_success(self, sample_schema, sample_tasks, tmp_path):
+        """DataRecipe 目录成功 → lines 286-302."""
+        # Build DataRecipe structure
+        schema_path = tmp_path / "DATA_SCHEMA.json"
+        schema_path.write_text(
+            json.dumps(sample_schema, ensure_ascii=False), encoding="utf-8"
+        )
+        samples_dir = tmp_path / "09_样例数据"
+        samples_dir.mkdir()
+        (samples_dir / "samples.json").write_text(
+            json.dumps({"samples": sample_tasks}, ensure_ascii=False), encoding="utf-8"
+        )
+        output = str(tmp_path / "annotator.html")
+        result = handle_generate_annotator({
+            "analysis_dir": str(tmp_path),
+            "output_path": output,
+        })
+        assert "已生成" in result[0].text
+        assert Path(output).exists()
+
+    def test_failure(self, tmp_path):
+        """无效目录 → line 302."""
+        result = handle_generate_annotator({
+            "analysis_dir": str(tmp_path),
+        })
+        assert "失败" in result[0].text
+
+
+class TestHandlerErrorPaths:
+    """测试 handler 错误分支."""
+
+    def test_create_annotator_failure(self, tmp_path):
+        """无效 schema → line 326."""
+        result = handle_create_annotator({
+            "schema": {"fields": "not_a_list"},
+            "tasks": [],
+            "output_path": str(tmp_path / "out.html"),
+        })
+        assert "失败" in result[0].text
+
+    def test_merge_annotations_failure(self, tmp_path):
+        """损坏文件 → line 350."""
+        f1 = tmp_path / "a1.json"
+        f2 = tmp_path / "a2.json"
+        f1.write_text("{bad", encoding="utf-8")
+        f2.write_text("{bad", encoding="utf-8")
+        result = handle_merge_annotations({
+            "result_files": [str(f1), str(f2)],
+            "output_path": str(tmp_path / "merged.json"),
+        })
+        assert "失败" in result[0].text
+
+    def test_calculate_iaa_error(self, tmp_path):
+        """空 responses → error → line 357."""
+        f1 = tmp_path / "a1.json"
+        f2 = tmp_path / "a2.json"
+        f1.write_text(json.dumps({"responses": []}), encoding="utf-8")
+        f2.write_text(json.dumps({"responses": []}), encoding="utf-8")
+        result = handle_calculate_iaa({
+            "result_files": [str(f1), str(f2)],
+        })
+        assert "失败" in result[0].text
+
+    def test_validate_schema_invalid_tasks(self, sample_schema):
+        """tasks 含非字典 → lines 392-394."""
+        result = handle_validate_schema({
+            "schema": sample_schema,
+            "tasks": ["not_a_dict"],
+        })
+        assert "任务数据验证失败" in result[0].text
+
+    def test_validate_schema_task_warnings(self, sample_schema):
+        """空 tasks → task warnings → lines 396-398."""
+        result = handle_validate_schema({
+            "schema": sample_schema,
+            "tasks": [],
+        })
+        assert "警告" in result[0].text

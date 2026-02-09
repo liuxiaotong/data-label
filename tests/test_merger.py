@@ -417,3 +417,125 @@ class TestIAAEdgeCases:
     def test_krippendorff_alpha_uniform(self):
         """All same category -> d_e == 0.0, returns 1.0."""
         assert ResultMerger._krippendorff_alpha([["a", "a"], ["a", "a"]]) == 1.0
+
+
+class TestMergerStrategyEdgeCases:
+    """Test merger strategy edge cases and fallback paths."""
+
+    def test_merge_choice_strict_agree(self, annotator_results_factory):
+        """Single choice strict, all agree → lines 221-222."""
+        merger = ResultMerger()
+        ann1 = {"metadata": {}, "responses": [{"task_id": "T1", "choice": "pos", "comment": ""}]}
+        ann2 = {"metadata": {}, "responses": [{"task_id": "T1", "choice": "pos", "comment": ""}]}
+        with tempfile.TemporaryDirectory() as tmpdir:
+            files = annotator_results_factory(tmpdir, [ann1, ann2])
+            output_path = Path(tmpdir) / "merged.json"
+            result = merger.merge(result_files=files, output_path=str(output_path), strategy="strict")
+            assert result.success
+            merged = json.loads(output_path.read_text())
+            assert merged["responses"][0]["choice"] == "pos"
+
+    def test_merge_choice_strict_disagree(self, annotator_results_factory):
+        """Single choice strict, disagree → None."""
+        merger = ResultMerger()
+        ann1 = {"metadata": {}, "responses": [{"task_id": "T1", "choice": "pos", "comment": ""}]}
+        ann2 = {"metadata": {}, "responses": [{"task_id": "T1", "choice": "neg", "comment": ""}]}
+        with tempfile.TemporaryDirectory() as tmpdir:
+            files = annotator_results_factory(tmpdir, [ann1, ann2])
+            output_path = Path(tmpdir) / "merged.json"
+            result = merger.merge(result_files=files, output_path=str(output_path), strategy="strict")
+            assert result.success
+            merged = json.loads(output_path.read_text())
+            assert merged["responses"][0]["choice"] is None
+
+    def test_merge_multi_choice_strict(self, annotator_results_factory):
+        """Multi-choice strict → intersection → line 236."""
+        merger = ResultMerger()
+        ann1 = {"metadata": {}, "responses": [{"task_id": "T1", "choices": ["a", "b"], "comment": ""}]}
+        ann2 = {"metadata": {}, "responses": [{"task_id": "T1", "choices": ["a", "c"], "comment": ""}]}
+        with tempfile.TemporaryDirectory() as tmpdir:
+            files = annotator_results_factory(tmpdir, [ann1, ann2])
+            output_path = Path(tmpdir) / "merged.json"
+            result = merger.merge(result_files=files, output_path=str(output_path), strategy="strict")
+            assert result.success
+            merged = json.loads(output_path.read_text())
+            assert merged["responses"][0]["choices"] == ["a"]  # intersection
+
+    def test_merge_ranking_strict_agree(self, annotator_results_factory):
+        """Ranking strict, all agree → lines 267-268."""
+        merger = ResultMerger()
+        ann1 = {"metadata": {}, "responses": [{"task_id": "T1", "ranking": ["a", "b"], "comment": ""}]}
+        ann2 = {"metadata": {}, "responses": [{"task_id": "T1", "ranking": ["a", "b"], "comment": ""}]}
+        with tempfile.TemporaryDirectory() as tmpdir:
+            files = annotator_results_factory(tmpdir, [ann1, ann2])
+            output_path = Path(tmpdir) / "merged.json"
+            result = merger.merge(result_files=files, output_path=str(output_path), strategy="strict")
+            assert result.success
+            merged = json.loads(output_path.read_text())
+            assert merged["responses"][0]["ranking"] == ["a", "b"]
+
+    def test_merge_ranking_strict_disagree(self, annotator_results_factory):
+        """Ranking strict, disagree → None → line 269."""
+        merger = ResultMerger()
+        ann1 = {"metadata": {}, "responses": [{"task_id": "T1", "ranking": ["a", "b"], "comment": ""}]}
+        ann2 = {"metadata": {}, "responses": [{"task_id": "T1", "ranking": ["b", "a"], "comment": ""}]}
+        with tempfile.TemporaryDirectory() as tmpdir:
+            files = annotator_results_factory(tmpdir, [ann1, ann2])
+            output_path = Path(tmpdir) / "merged.json"
+            result = merger.merge(result_files=files, output_path=str(output_path), strategy="strict")
+            assert result.success
+            merged = json.loads(output_path.read_text())
+            assert merged["responses"][0]["ranking"] is None
+
+    def test_merge_unknown_type_fallback(self, annotator_results_factory):
+        """Responses without known keys → fallback to score merge → line 186.
+
+        Fallback hits _merge_score_responses which KeyErrors → caught by exception handler.
+        """
+        merger = ResultMerger()
+        ann1 = {"metadata": {}, "responses": [{"task_id": "T1", "custom_field": "x", "comment": ""}]}
+        ann2 = {"metadata": {}, "responses": [{"task_id": "T1", "custom_field": "y", "comment": ""}]}
+        with tempfile.TemporaryDirectory() as tmpdir:
+            files = annotator_results_factory(tmpdir, [ann1, ann2])
+            output_path = Path(tmpdir) / "merged.json"
+            result = merger.merge(result_files=files, output_path=str(output_path))
+            # Fallback path reaches line 186 then fails on KeyError → caught
+            assert not result.success
+
+    def test_merge_score_unknown_strategy(self, annotator_results_factory):
+        """Score with unknown strategy → fallback → line 206."""
+        merger = ResultMerger()
+        ann1 = {"metadata": {}, "responses": [{"task_id": "T1", "score": 3, "comment": ""}]}
+        ann2 = {"metadata": {}, "responses": [{"task_id": "T1", "score": 2, "comment": ""}]}
+        with tempfile.TemporaryDirectory() as tmpdir:
+            files = annotator_results_factory(tmpdir, [ann1, ann2])
+            output_path = Path(tmpdir) / "merged.json"
+            # Use unknown strategy name - falls through to else branch
+            result = merger.merge(result_files=files, output_path=str(output_path), strategy="unknown")
+            assert result.success
+            merged = json.loads(output_path.read_text())
+            # Fallback: takes first score
+            assert merged["responses"][0]["score"] == 3
+
+    def test_extract_values_unknown_type(self):
+        """Response with no known annotation key → fallback → line 536."""
+        values = ResultMerger._extract_annotation_values(
+            [{"custom": "x"}, {"custom": "y"}]
+        )
+        assert values == [None, None]
+
+    def test_merge_exception_handling(self, annotator_results_factory):
+        """Merge with corrupted file → exception → lines 143-145."""
+        merger = ResultMerger()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            f1 = Path(tmpdir) / "a1.json"
+            f2 = Path(tmpdir) / "a2.json"
+            f1.write_text("{invalid json", encoding="utf-8")
+            f2.write_text("{invalid json", encoding="utf-8")
+            output_path = Path(tmpdir) / "merged.json"
+            result = merger.merge(
+                result_files=[str(f1), str(f2)],
+                output_path=str(output_path),
+            )
+            assert not result.success
+            assert result.error

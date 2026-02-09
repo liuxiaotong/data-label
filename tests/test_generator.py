@@ -3,6 +3,7 @@
 import json
 import tempfile
 from pathlib import Path
+from unittest.mock import patch
 
 from datalabel import AnnotatorGenerator
 
@@ -420,3 +421,90 @@ class TestGenerateFromDatarecipeErrors:
             result = generator.generate_from_datarecipe(tmpdir)
             assert result.success
             assert result.task_count == 0
+
+
+class TestGeneratorValidationErrors:
+    """Test generator validation error paths."""
+
+    def test_generate_invalid_schema(self):
+        """Test schema validation failure → lines 72-74."""
+        generator = AnnotatorGenerator()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output_path = Path(tmpdir) / "out.html"
+            result = generator.generate(
+                schema={"fields": "not_a_list"},
+                tasks=[],
+                output_path=str(output_path),
+            )
+            assert not result.success
+            assert "Schema 验证失败" in result.error
+
+    def test_generate_invalid_tasks(self, sample_schema):
+        """Test task validation failure → lines 78-80."""
+        generator = AnnotatorGenerator()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output_path = Path(tmpdir) / "out.html"
+            result = generator.generate(
+                schema=sample_schema,
+                tasks=["not_a_dict"],
+                output_path=str(output_path),
+            )
+            assert not result.success
+            assert "任务数据验证失败" in result.error
+
+    def test_generate_os_error(self, sample_schema, sample_tasks):
+        """Test OS error during write → lines 103-105."""
+        generator = AnnotatorGenerator()
+        # /dev/null/impossible is not a valid path on any OS
+        result = generator.generate(
+            schema=sample_schema,
+            tasks=sample_tasks,
+            output_path="/dev/null/impossible/path/annotator.html",
+        )
+        assert not result.success
+        assert result.error  # should have an error message
+
+    def test_generate_from_datarecipe_with_guidelines(self, sample_schema, sample_tasks):
+        """Test datarecipe with guidelines file → line 157."""
+        generator = AnnotatorGenerator()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Schema
+            schema_path = Path(tmpdir) / "DATA_SCHEMA.json"
+            schema_path.write_text(
+                json.dumps(sample_schema, ensure_ascii=False), encoding="utf-8"
+            )
+            # Samples
+            samples_dir = Path(tmpdir) / "09_样例数据"
+            samples_dir.mkdir()
+            (samples_dir / "samples.json").write_text(
+                json.dumps({"samples": sample_tasks}, ensure_ascii=False), encoding="utf-8"
+            )
+            # Guidelines
+            guidelines_dir = Path(tmpdir) / "03_标注规范"
+            guidelines_dir.mkdir()
+            (guidelines_dir / "ANNOTATION_SPEC.md").write_text(
+                "# 标注规范\n请认真标注。", encoding="utf-8"
+            )
+
+            result = generator.generate_from_datarecipe(tmpdir)
+            assert result.success
+            assert result.task_count == 2
+
+    def test_generate_no_markdown_fallback(self, sample_schema, sample_tasks):
+        """Test fallback when markdown module is not available → line 194."""
+        generator = AnnotatorGenerator()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output_path = Path(tmpdir) / "out.html"
+
+            with patch("datalabel.generator.HAS_MARKDOWN", False):
+                result = generator.generate(
+                    schema=sample_schema,
+                    tasks=sample_tasks,
+                    output_path=str(output_path),
+                    guidelines="# 标注指南\n请仔细阅读。",
+                )
+
+            assert result.success
+            content = output_path.read_text()
+            assert "<pre>" in content
+            assert "标注指南" in content

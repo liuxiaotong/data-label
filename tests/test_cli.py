@@ -3,6 +3,7 @@
 import json
 import tempfile
 from pathlib import Path
+from unittest.mock import patch
 
 from click.testing import CliRunner
 
@@ -336,3 +337,419 @@ class TestValidateCommand:
 
             assert result.exit_code == 0
             assert "任务数据验证通过" in result.output
+
+
+class TestGenerateCommand:
+    """Tests for generate (DataRecipe) command."""
+
+    def test_generate_success(self, sample_schema, sample_tasks):
+        """Test generate from DataRecipe directory."""
+        runner = CliRunner()
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Build DataRecipe directory structure
+            schema_path = Path(tmpdir) / "DATA_SCHEMA.json"
+            schema_path.write_text(json.dumps(sample_schema, ensure_ascii=False))
+
+            samples_dir = Path(tmpdir) / "09_样例数据"
+            samples_dir.mkdir()
+            (samples_dir / "samples.json").write_text(
+                json.dumps({"samples": sample_tasks}, ensure_ascii=False)
+            )
+
+            output_path = Path(tmpdir) / "out.html"
+            result = runner.invoke(
+                main, ["generate", tmpdir, "-o", str(output_path)]
+            )
+
+            assert result.exit_code == 0
+            assert "生成成功" in result.output
+            assert output_path.exists()
+
+    def test_generate_failure(self):
+        """Test generate with missing schema."""
+        runner = CliRunner()
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            result = runner.invoke(main, ["generate", tmpdir])
+
+            assert result.exit_code == 1
+            assert "生成失败" in result.output
+
+
+class TestCreateEdgeCases:
+    """Tests for create command edge cases."""
+
+    def test_create_with_wrapped_tasks(self, sample_schema, sample_tasks):
+        """Test create with tasks wrapped in {"tasks": [...]}."""
+        runner = CliRunner()
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            schema_path = Path(tmpdir) / "schema.json"
+            tasks_path = Path(tmpdir) / "tasks.json"
+            output_path = Path(tmpdir) / "annotator.html"
+
+            schema_path.write_text(json.dumps(sample_schema, ensure_ascii=False))
+            tasks_path.write_text(
+                json.dumps({"tasks": sample_tasks}, ensure_ascii=False)
+            )
+
+            result = runner.invoke(
+                main,
+                ["create", str(schema_path), str(tasks_path), "-o", str(output_path)],
+            )
+
+            assert result.exit_code == 0
+            assert "创建成功" in result.output
+
+    def test_create_with_guidelines(self, sample_schema, sample_tasks):
+        """Test create with guidelines file."""
+        runner = CliRunner()
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            schema_path = Path(tmpdir) / "schema.json"
+            tasks_path = Path(tmpdir) / "tasks.json"
+            output_path = Path(tmpdir) / "annotator.html"
+            guidelines_path = Path(tmpdir) / "guidelines.md"
+
+            schema_path.write_text(json.dumps(sample_schema, ensure_ascii=False))
+            tasks_path.write_text(json.dumps(sample_tasks, ensure_ascii=False))
+            guidelines_path.write_text("# 标注指南\n\n请仔细标注。")
+
+            result = runner.invoke(
+                main,
+                [
+                    "create",
+                    str(schema_path),
+                    str(tasks_path),
+                    "-o",
+                    str(output_path),
+                    "-g",
+                    str(guidelines_path),
+                ],
+            )
+
+            assert result.exit_code == 0
+            assert "创建成功" in result.output
+
+    def test_create_invalid_schema(self, sample_tasks):
+        """Test create with invalid schema → failure."""
+        runner = CliRunner()
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            schema_path = Path(tmpdir) / "schema.json"
+            tasks_path = Path(tmpdir) / "tasks.json"
+            output_path = Path(tmpdir) / "annotator.html"
+
+            schema_path.write_text(json.dumps({"fields": "not_a_list"}, ensure_ascii=False))
+            tasks_path.write_text(json.dumps(sample_tasks, ensure_ascii=False))
+
+            result = runner.invoke(
+                main,
+                ["create", str(schema_path), str(tasks_path), "-o", str(output_path)],
+            )
+
+            assert result.exit_code == 1
+            assert "创建失败" in result.output
+
+
+class TestMergeIAAErrors:
+    """Tests for merge/iaa error paths."""
+
+    def test_merge_failure(self):
+        """Test merge with corrupted result files."""
+        runner = CliRunner()
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            f1 = Path(tmpdir) / "a1.json"
+            f2 = Path(tmpdir) / "a2.json"
+            f1.write_text("{invalid json")
+            f2.write_text("{invalid json")
+            output_path = Path(tmpdir) / "merged.json"
+
+            result = runner.invoke(
+                main, ["merge", str(f1), str(f2), "-o", str(output_path)]
+            )
+
+            assert result.exit_code == 1
+            assert "合并失败" in result.output
+
+    def test_iaa_error(self):
+        """Test iaa with corrupted result files."""
+        runner = CliRunner()
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            f1 = Path(tmpdir) / "a1.json"
+            f2 = Path(tmpdir) / "a2.json"
+            # Files without responses key → calculate_iaa returns error
+            f1.write_text(json.dumps({"responses": []}, ensure_ascii=False))
+            f2.write_text(json.dumps({"responses": []}, ensure_ascii=False))
+
+            result = runner.invoke(main, ["iaa", str(f1), str(f2)])
+
+            assert result.exit_code == 1
+            assert "计算失败" in result.output
+
+
+class TestExportErrors:
+    """Tests for export error paths."""
+
+    def test_export_unrecognized_format(self):
+        """Test export with unrecognized result file format."""
+        runner = CliRunner()
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            input_path = Path(tmpdir) / "results.json"
+            input_path.write_text(json.dumps({"some_key": "value"}, ensure_ascii=False))
+            output_path = Path(tmpdir) / "exported.json"
+
+            result = runner.invoke(
+                main, ["export", str(input_path), "-o", str(output_path), "-f", "json"]
+            )
+
+            assert result.exit_code == 1
+            assert "无法识别" in result.output
+
+
+class TestValidateTaskWarnings:
+    """Tests for validate task warnings path."""
+
+    def test_validate_with_empty_tasks(self, sample_schema):
+        """Test validate with empty tasks list → task warnings."""
+        runner = CliRunner()
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            schema_path = Path(tmpdir) / "schema.json"
+            tasks_path = Path(tmpdir) / "tasks.json"
+            schema_path.write_text(json.dumps(sample_schema, ensure_ascii=False))
+            tasks_path.write_text(json.dumps([], ensure_ascii=False))
+
+            result = runner.invoke(
+                main, ["validate", str(schema_path), "-t", str(tasks_path)]
+            )
+
+            assert result.exit_code == 0
+            assert "警告" in result.output
+
+
+class TestLLMCommands:
+    """Tests for LLM CLI commands with mocking."""
+
+    def test_prelabel_success(self, sample_schema, sample_tasks):
+        """Test prelabel command success."""
+        runner = CliRunner()
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            schema_path = Path(tmpdir) / "schema.json"
+            tasks_path = Path(tmpdir) / "tasks.json"
+            output_path = Path(tmpdir) / "prelabeled.json"
+
+            schema_path.write_text(json.dumps(sample_schema, ensure_ascii=False))
+            tasks_path.write_text(json.dumps(sample_tasks, ensure_ascii=False))
+
+            from datalabel.llm import LLMUsage, PreLabelResult
+
+            mock_result = PreLabelResult(
+                success=True,
+                total_tasks=2,
+                labeled_tasks=2,
+                total_usage=LLMUsage(prompt_tokens=100, completion_tokens=50, total_tokens=150),
+                output_path=str(output_path),
+            )
+
+            with patch("datalabel.llm.PreLabeler") as MockLabeler, \
+                 patch("datalabel.llm.LLMClient"), \
+                 patch("datalabel.llm.LLMConfig"):
+                MockLabeler.return_value.prelabel.return_value = mock_result
+
+                result = runner.invoke(
+                    main,
+                    ["prelabel", str(schema_path), str(tasks_path), "-o", str(output_path)],
+                )
+
+            assert result.exit_code == 0
+            assert "预标注完成" in result.output
+            assert "2/2" in result.output
+
+    def test_prelabel_failure(self, sample_schema, sample_tasks):
+        """Test prelabel command failure."""
+        runner = CliRunner()
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            schema_path = Path(tmpdir) / "schema.json"
+            tasks_path = Path(tmpdir) / "tasks.json"
+            output_path = Path(tmpdir) / "prelabeled.json"
+
+            schema_path.write_text(json.dumps(sample_schema, ensure_ascii=False))
+            tasks_path.write_text(json.dumps(sample_tasks, ensure_ascii=False))
+
+            from datalabel.llm import PreLabelResult
+
+            mock_result = PreLabelResult(success=False, error="API 调用失败")
+
+            with patch("datalabel.llm.PreLabeler") as MockLabeler, \
+                 patch("datalabel.llm.LLMClient"), \
+                 patch("datalabel.llm.LLMConfig"):
+                MockLabeler.return_value.prelabel.return_value = mock_result
+
+                result = runner.invoke(
+                    main,
+                    ["prelabel", str(schema_path), str(tasks_path), "-o", str(output_path)],
+                )
+
+            assert result.exit_code == 1
+            assert "预标注失败" in result.output
+
+    def test_quality_success(self, sample_schema, annotator1_results, annotator2_results):
+        """Test quality command success."""
+        runner = CliRunner()
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            schema_path = Path(tmpdir) / "schema.json"
+            f1 = Path(tmpdir) / "a1.json"
+            f2 = Path(tmpdir) / "a2.json"
+            output_path = Path(tmpdir) / "report.json"
+
+            schema_path.write_text(json.dumps(sample_schema, ensure_ascii=False))
+            f1.write_text(json.dumps(annotator1_results, ensure_ascii=False))
+            f2.write_text(json.dumps(annotator2_results, ensure_ascii=False))
+
+            from datalabel.llm import LLMUsage
+            from datalabel.llm.quality import QualityIssue, QualityReport
+
+            mock_report = QualityReport(
+                success=True,
+                summary="总体质量良好",
+                issues=[
+                    QualityIssue(
+                        task_id="TASK_002",
+                        issue_type="suspicious",
+                        severity="medium",
+                        description="标注分歧较大",
+                    )
+                ],
+                disagreement_analysis={"common_patterns": "分数偏差较大"},
+                total_usage=LLMUsage(total_tokens=200),
+                output_path=str(output_path),
+            )
+
+            with patch("datalabel.llm.QualityAnalyzer") as MockAnalyzer, \
+                 patch("datalabel.llm.LLMClient"), \
+                 patch("datalabel.llm.LLMConfig"):
+                MockAnalyzer.return_value.analyze.return_value = mock_report
+
+                result = runner.invoke(
+                    main,
+                    [
+                        "quality",
+                        str(schema_path),
+                        str(f1),
+                        str(f2),
+                        "-o",
+                        str(output_path),
+                    ],
+                )
+
+            assert result.exit_code == 0
+            assert "质量分析报告" in result.output
+            assert "1 个问题" in result.output
+            assert "分歧分析" in result.output
+
+    def test_quality_failure(self, sample_schema, annotator1_results, annotator2_results):
+        """Test quality command failure."""
+        runner = CliRunner()
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            schema_path = Path(tmpdir) / "schema.json"
+            f1 = Path(tmpdir) / "a1.json"
+            f2 = Path(tmpdir) / "a2.json"
+
+            schema_path.write_text(json.dumps(sample_schema, ensure_ascii=False))
+            f1.write_text(json.dumps(annotator1_results, ensure_ascii=False))
+            f2.write_text(json.dumps(annotator2_results, ensure_ascii=False))
+
+            from datalabel.llm.quality import QualityReport
+
+            mock_report = QualityReport(success=False, error="API 错误")
+
+            with patch("datalabel.llm.QualityAnalyzer") as MockAnalyzer, \
+                 patch("datalabel.llm.LLMClient"), \
+                 patch("datalabel.llm.LLMConfig"):
+                MockAnalyzer.return_value.analyze.return_value = mock_report
+
+                result = runner.invoke(
+                    main,
+                    ["quality", str(schema_path), str(f1), str(f2)],
+                )
+
+            assert result.exit_code == 1
+            assert "分析失败" in result.output
+
+    def test_gen_guidelines_success(self, sample_schema, sample_tasks):
+        """Test gen-guidelines command success."""
+        runner = CliRunner()
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            schema_path = Path(tmpdir) / "schema.json"
+            tasks_path = Path(tmpdir) / "tasks.json"
+            output_path = Path(tmpdir) / "guidelines.md"
+
+            schema_path.write_text(json.dumps(sample_schema, ensure_ascii=False))
+            tasks_path.write_text(json.dumps(sample_tasks, ensure_ascii=False))
+
+            from datalabel.llm import LLMUsage
+            from datalabel.llm.guidelines import GuidelinesResult
+
+            mock_result = GuidelinesResult(
+                success=True,
+                content="# 标注指南",
+                total_usage=LLMUsage(total_tokens=300),
+                output_path=str(output_path),
+            )
+
+            with patch("datalabel.llm.GuidelinesGenerator") as MockGen, \
+                 patch("datalabel.llm.LLMClient"), \
+                 patch("datalabel.llm.LLMConfig"):
+                MockGen.return_value.generate.return_value = mock_result
+
+                result = runner.invoke(
+                    main,
+                    [
+                        "gen-guidelines",
+                        str(schema_path),
+                        "-t",
+                        str(tasks_path),
+                        "-o",
+                        str(output_path),
+                    ],
+                )
+
+            assert result.exit_code == 0
+            assert "指南生成成功" in result.output
+
+    def test_gen_guidelines_failure(self, sample_schema):
+        """Test gen-guidelines command failure."""
+        runner = CliRunner()
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            schema_path = Path(tmpdir) / "schema.json"
+            output_path = Path(tmpdir) / "guidelines.md"
+
+            schema_path.write_text(json.dumps(sample_schema, ensure_ascii=False))
+
+            from datalabel.llm.guidelines import GuidelinesResult
+
+            mock_result = GuidelinesResult(success=False, error="API 错误")
+
+            with patch("datalabel.llm.GuidelinesGenerator") as MockGen, \
+                 patch("datalabel.llm.LLMClient"), \
+                 patch("datalabel.llm.LLMConfig"):
+                MockGen.return_value.generate.return_value = mock_result
+
+                result = runner.invoke(
+                    main,
+                    ["gen-guidelines", str(schema_path), "-o", str(output_path)],
+                )
+
+            assert result.exit_code == 1
+            assert "生成失败" in result.output
