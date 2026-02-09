@@ -2,8 +2,8 @@
 
 # DataLabel
 
-**轻量级数据标注工具 - 零服务器依赖的 HTML 标注界面**
-**Lightweight, serverless HTML labeling tool for offline teams**
+**轻量级数据标注工具 — 零服务器依赖的 HTML 标注界面**
+**Lightweight, serverless HTML labeling tool for offline annotation teams**
 
 [![PyPI](https://img.shields.io/pypi/v/knowlyr-datalabel?color=blue)](https://pypi.org/project/knowlyr-datalabel/)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
