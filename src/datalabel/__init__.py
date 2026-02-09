@@ -7,5 +7,6 @@ __version__ = "0.1.0"
 
 from datalabel.generator import AnnotatorGenerator
 from datalabel.merger import ResultMerger
+from datalabel.validator import SchemaValidator
 
-__all__ = ["AnnotatorGenerator", "ResultMerger", "__version__"]
+__all__ = ["AnnotatorGenerator", "ResultMerger", "SchemaValidator", "__version__"]

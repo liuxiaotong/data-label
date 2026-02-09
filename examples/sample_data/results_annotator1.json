@@ -1,0 +1,13 @@
+{
+  "metadata": {
+    "annotator": "annotator_1",
+    "exported_at": "2025-01-15T10:00:00"
+  },
+  "responses": [
+    {"task_id": "TASK_001", "score": 1, "comment": "回答准确完整"},
+    {"task_id": "TASK_002", "score": 1, "comment": ""},
+    {"task_id": "TASK_003", "score": 0.5, "comment": "可以更详细"},
+    {"task_id": "TASK_004", "score": 1, "comment": ""},
+    {"task_id": "TASK_005", "score": 1, "comment": ""}
+  ]
+}

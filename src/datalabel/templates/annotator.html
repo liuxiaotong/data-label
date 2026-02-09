@@ -18,6 +18,33 @@
             --gray-500: #6b7280;
             --gray-700: #374151;
             --gray-900: #111827;
+            --bg: var(--gray-50);
+            --card-bg: white;
+            --text: var(--gray-900);
+            --text-secondary: var(--gray-500);
+            --border: var(--gray-200);
+            --input-bg: white;
+        }
+
+        [data-theme="dark"] {
+            --primary: #6366f1;
+            --primary-light: #818cf8;
+            --success: #34d399;
+            --warning: #fbbf24;
+            --danger: #f87171;
+            --gray-50: #1a1a2e;
+            --gray-100: #1f2037;
+            --gray-200: #2d2d44;
+            --gray-300: #3d3d56;
+            --gray-500: #9ca3af;
+            --gray-700: #d1d5db;
+            --gray-900: #f3f4f6;
+            --bg: #0f0f1a;
+            --card-bg: #1a1a2e;
+            --text: #f3f4f6;
+            --text-secondary: #9ca3af;
+            --border: #2d2d44;
+            --input-bg: #1f2037;
         }
 
         * {
@@ -28,15 +55,15 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            background: var(--gray-50);
-            color: var(--gray-900);
+            background: var(--bg);
+            color: var(--text);
             line-height: 1.6;
         }
 
         /* Header */
         header {
-            background: white;
-            border-bottom: 1px solid var(--gray-200);
+            background: var(--card-bg);
+            border-bottom: 1px solid var(--border);
             padding: 1rem 2rem;
             position: sticky;
             top: 0;
@@ -44,6 +71,27 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .theme-toggle {
+            background: none;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0.4rem 0.6rem;
+            cursor: pointer;
+            font-size: 1rem;
+            color: var(--text);
+            transition: background 0.2s;
+        }
+
+        .theme-toggle:hover {
+            background: var(--gray-100);
         }
 
         header h1 {
@@ -73,28 +121,137 @@
 
         .progress-text {
             font-size: 0.875rem;
-            color: var(--gray-500);
+            color: var(--text-secondary);
         }
 
         /* Main Layout */
         main {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
             padding: 2rem;
             display: grid;
-            grid-template-columns: 1fr 350px;
-            gap: 2rem;
+            grid-template-columns: 220px 1fr 350px;
+            gap: 1.5rem;
+        }
+
+        @media (max-width: 1100px) {
+            main {
+                grid-template-columns: 1fr 320px;
+            }
+            .task-sidebar { display: none; }
         }
 
         @media (max-width: 900px) {
             main {
                 grid-template-columns: 1fr;
             }
+            .task-sidebar { display: none; }
+        }
+
+        /* Task Sidebar */
+        .task-sidebar {
+            position: sticky;
+            top: 80px;
+            max-height: calc(100vh - 100px);
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .sidebar-search {
+            width: 100%;
+            padding: 0.5rem 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.8rem;
+            background: var(--input-bg);
+            color: var(--text);
+        }
+
+        .sidebar-search:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .sidebar-filter {
+            width: 100%;
+            padding: 0.4rem 0.5rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.8rem;
+            background: var(--input-bg);
+            color: var(--text);
+        }
+
+        .task-list-container {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .task-list-item {
+            padding: 0.4rem 0.6rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            border-left: 3px solid transparent;
+            transition: all 0.15s;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .task-list-item:hover {
+            background: var(--gray-100);
+        }
+
+        .task-list-item.current {
+            background: var(--primary-light);
+            color: white;
+            border-left-color: var(--primary);
+        }
+
+        .task-list-item.complete {
+            border-left-color: var(--success);
+        }
+
+        .task-list-item.complete::before {
+            content: '✓ ';
+            color: var(--success);
+        }
+
+        .task-list-item.current.complete::before {
+            color: white;
+        }
+
+        .sidebar-pagination {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            font-size: 0.75rem;
+            color: var(--gray-500);
+        }
+
+        .sidebar-pagination button {
+            padding: 0.25rem 0.5rem;
+            border: 1px solid var(--gray-200);
+            border-radius: 4px;
+            background: white;
+            cursor: pointer;
+            font-size: 0.7rem;
+        }
+
+        .sidebar-pagination button:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
         }
 
         /* Task Card */
         .task-card {
-            background: white;
+            background: var(--card-bg);
             border-radius: 12px;
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
             padding: 1.5rem;
@@ -106,12 +263,12 @@
             align-items: center;
             margin-bottom: 1rem;
             padding-bottom: 1rem;
-            border-bottom: 1px solid var(--gray-200);
+            border-bottom: 1px solid var(--border);
         }
 
         .task-id {
             font-size: 0.875rem;
-            color: var(--gray-500);
+            color: var(--text-secondary);
         }
 
         .task-type {
@@ -130,7 +287,7 @@
         .task-field-label {
             font-size: 0.75rem;
             font-weight: 600;
-            color: var(--gray-500);
+            color: var(--text-secondary);
             text-transform: uppercase;
             margin-bottom: 0.5rem;
         }
@@ -151,8 +308,8 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            background: white;
-            border: 1px solid var(--gray-200);
+            background: var(--card-bg);
+            border: 1px solid var(--border);
         }
 
         .task-field-value.svg-preview svg {
@@ -162,7 +319,7 @@
 
         /* Annotation Panel */
         .annotation-panel {
-            background: white;
+            background: var(--card-bg);
             border-radius: 12px;
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
             padding: 1.5rem;
@@ -175,29 +332,31 @@
             margin-bottom: 1rem;
         }
 
-        .score-buttons {
+        /* Score & Choice Buttons (shared styles) */
+        .score-buttons, .choice-buttons {
             display: flex;
             flex-direction: column;
             gap: 0.5rem;
             margin-bottom: 1.5rem;
         }
 
-        .score-btn {
+        .score-btn, .choice-btn {
             padding: 0.75rem 1rem;
-            border: 2px solid var(--gray-200);
+            border: 2px solid var(--border);
             border-radius: 8px;
-            background: white;
+            background: var(--card-bg);
             cursor: pointer;
             font-size: 0.875rem;
             text-align: left;
             transition: all 0.2s;
+            color: var(--text);
         }
 
-        .score-btn:hover {
+        .score-btn:hover, .choice-btn:hover {
             border-color: var(--primary-light);
         }
 
-        .score-btn.selected {
+        .score-btn.selected, .choice-btn.selected {
             border-color: var(--primary);
             background: var(--primary);
             color: white;
@@ -206,6 +365,86 @@
         .score-btn[data-score="1"] { border-left: 4px solid var(--success); }
         .score-btn[data-score="0.5"] { border-left: 4px solid var(--warning); }
         .score-btn[data-score="0"] { border-left: 4px solid var(--danger); }
+
+        /* Text Annotation */
+        .text-annotation {
+            margin-bottom: 1.5rem;
+        }
+
+        .text-annotation textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.875rem;
+            resize: vertical;
+            min-height: 120px;
+            font-family: inherit;
+            background: var(--input-bg);
+            color: var(--text);
+        }
+
+        .text-annotation textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .text-annotation .char-count {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            text-align: right;
+            margin-top: 0.25rem;
+        }
+
+        /* Ranking */
+        .ranking-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .ranking-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            background: var(--card-bg);
+            cursor: grab;
+            font-size: 0.875rem;
+            transition: all 0.2s;
+            user-select: none;
+        }
+
+        .ranking-item:active {
+            cursor: grabbing;
+        }
+
+        .ranking-item.dragging {
+            opacity: 0.5;
+            border-color: var(--primary);
+        }
+
+        .ranking-item .rank-number {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--primary);
+            color: white;
+            font-size: 0.75rem;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        .ranking-item .drag-handle {
+            color: var(--gray-300);
+            flex-shrink: 0;
+        }
 
         .comment-area {
             margin-bottom: 1.5rem;
@@ -221,11 +460,13 @@
         .comment-area textarea {
             width: 100%;
             padding: 0.75rem;
-            border: 1px solid var(--gray-200);
+            border: 1px solid var(--border);
             border-radius: 8px;
             font-size: 0.875rem;
             resize: vertical;
             min-height: 80px;
+            background: var(--input-bg);
+            color: var(--text);
         }
 
         .comment-area textarea:focus {
@@ -261,7 +502,7 @@
 
         .nav-btn.secondary {
             background: var(--gray-100);
-            color: var(--gray-700);
+            color: var(--text);
         }
 
         .nav-btn.secondary:hover {
@@ -295,8 +536,8 @@
         .guidelines-content {
             display: none;
             padding: 1rem;
-            background: white;
-            border: 1px solid var(--gray-200);
+            background: var(--card-bg);
+            border: 1px solid var(--border);
             border-radius: 0 0 8px 8px;
             font-size: 0.875rem;
             max-height: 400px;
@@ -319,7 +560,7 @@
         }
 
         .guidelines-content th, .guidelines-content td {
-            border: 1px solid var(--gray-200);
+            border: 1px solid var(--border);
             padding: 0.5rem;
             text-align: left;
         }
@@ -335,7 +576,7 @@
         .export-section {
             margin-top: 1.5rem;
             padding-top: 1.5rem;
-            border-top: 1px solid var(--gray-200);
+            border-top: 1px solid var(--border);
         }
 
         .export-btn {
@@ -370,7 +611,7 @@
         /* Keyboard shortcuts hint */
         .shortcuts-hint {
             font-size: 0.75rem;
-            color: var(--gray-500);
+            color: var(--text-secondary);
             margin-top: 1rem;
             text-align: center;
         }
@@ -379,7 +620,168 @@
             background: var(--gray-100);
             padding: 0.125rem 0.375rem;
             border-radius: 4px;
-            border: 1px solid var(--gray-200);
+            border: 1px solid var(--border);
+        }
+
+        /* Undo button */
+        .undo-btn {
+            width: 100%;
+            padding: 0.5rem;
+            background: none;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-top: 0.5rem;
+            transition: all 0.2s;
+        }
+
+        .undo-btn:hover:not(:disabled) {
+            background: var(--gray-100);
+            color: var(--text);
+        }
+
+        .undo-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        /* Statistics Panel */
+        .stats-panel {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .stats-panel h4 {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.75rem;
+        }
+
+        .stats-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            margin-bottom: 0.35rem;
+            color: var(--text);
+        }
+
+        .stats-row .label {
+            color: var(--text-secondary);
+        }
+
+        .stats-bar {
+            width: 100%;
+            height: 6px;
+            background: var(--gray-200);
+            border-radius: 3px;
+            margin-top: 0.5rem;
+            overflow: hidden;
+        }
+
+        .stats-bar-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.3s;
+        }
+
+        .stats-distribution {
+            display: flex;
+            gap: 2px;
+            align-items: flex-end;
+            height: 40px;
+            margin-top: 0.5rem;
+        }
+
+        .stats-dist-bar {
+            flex: 1;
+            background: var(--primary-light);
+            border-radius: 2px 2px 0 0;
+            min-height: 2px;
+            position: relative;
+        }
+
+        .stats-dist-bar .dist-label {
+            position: absolute;
+            bottom: -1.2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.6rem;
+            color: var(--text-secondary);
+            white-space: nowrap;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-overlay.open {
+            display: flex;
+        }
+
+        .modal {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 2rem;
+            max-width: 480px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal h3 {
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+        }
+
+        .modal table {
+            width: 100%;
+            font-size: 0.85rem;
+        }
+
+        .modal td {
+            padding: 0.4rem 0.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .modal td:first-child {
+            white-space: nowrap;
+        }
+
+        .modal td kbd {
+            background: var(--gray-100);
+            padding: 0.15rem 0.4rem;
+            border-radius: 4px;
+            border: 1px solid var(--border);
+            font-size: 0.8rem;
+        }
+
+        .modal-close {
+            margin-top: 1rem;
+            width: 100%;
+            padding: 0.6rem;
+            background: var(--gray-100);
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            color: var(--text);
+            font-size: 0.875rem;
+        }
+
+        .modal-close:hover {
+            background: var(--gray-200);
         }
 
         /* Toast notification */
@@ -398,6 +800,11 @@
             z-index: 1000;
         }
 
+        [data-theme="dark"] .toast {
+            background: var(--gray-100);
+            color: var(--text);
+        }
+
         .toast.show {
             opacity: 1;
             transform: translateY(0);
@@ -407,15 +814,29 @@
 <body>
     <header>
         <h1>{{ title }}</h1>
-        <div class="progress-info">
-            <div class="progress-bar">
-                <div class="progress-bar-fill" id="progressBar"></div>
+        <div class="header-right">
+            <div class="progress-info">
+                <div class="progress-bar">
+                    <div class="progress-bar-fill" id="progressBar"></div>
+                </div>
+                <span class="progress-text" id="progressText">0 / {{ total_tasks }}</span>
             </div>
-            <span class="progress-text" id="progressText">0 / {{ total_tasks }}</span>
+            <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="切换暗黑模式">🌙</button>
         </div>
     </header>
 
     <main>
+        <div class="task-sidebar" id="taskSidebar">
+            <input type="text" class="sidebar-search" id="sidebarSearch" placeholder="搜索任务..." oninput="filterTaskList()">
+            <select class="sidebar-filter" id="sidebarFilter" onchange="filterTaskList()">
+                <option value="all">全部</option>
+                <option value="completed">已完成</option>
+                <option value="pending">未完成</option>
+            </select>
+            <div class="task-list-container" id="taskListContainer"></div>
+            <div class="sidebar-pagination" id="sidebarPagination"></div>
+        </div>
+
         <div class="task-area">
             <div class="task-card" id="taskCard">
                 <div class="task-header">
@@ -440,24 +861,10 @@
 
         <div class="annotation-area">
             <div class="annotation-panel">
-                <h3>评分</h3>
-                <div class="score-buttons" id="scoreButtons">
-                    {% for rubric in scoring_rubric %}
-                    <button class="score-btn" data-score="{{ rubric.score }}" onclick="selectScore('{{ rubric.score }}')">
-                        {{ rubric.score }} - {{ rubric.criteria }}
-                    </button>
-                    {% else %}
-                    <button class="score-btn" data-score="1" onclick="selectScore('1')">
-                        ✓ 正确
-                    </button>
-                    <button class="score-btn" data-score="0.5" onclick="selectScore('0.5')">
-                        △ 部分正确
-                    </button>
-                    <button class="score-btn" data-score="0" onclick="selectScore('0')">
-                        ✗ 错误
-                    </button>
-                    {% endfor %}
-                </div>
+                <h3 id="annotationTitle">标注</h3>
+
+                <!-- Annotation widget container (rendered by JS based on type) -->
+                <div id="annotationWidget"></div>
 
                 <div class="comment-area">
                     <label for="comment">备注 (可选)</label>
@@ -473,18 +880,52 @@
                     </button>
                 </div>
 
-                <div class="shortcuts-hint">
-                    快捷键: <kbd>←</kbd> <kbd>→</kbd> 导航 · <kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd> 评分
+                <button class="undo-btn" id="undoBtn" onclick="undoAnnotation()" disabled>
+                    ↩ 撤销 (Ctrl+Z)
+                </button>
+
+                <div class="shortcuts-hint" id="shortcutsHint">
+                    快捷键: <kbd>←</kbd> <kbd>→</kbd> 导航 · <kbd>?</kbd> 帮助
+                </div>
+
+                <div class="stats-panel" id="statsPanel">
+                    <h4>统计</h4>
+                    <div class="stats-row"><span class="label">已完成</span><span id="statsCompleted">0</span></div>
+                    <div class="stats-row"><span class="label">未完成</span><span id="statsPending">0</span></div>
+                    <div class="stats-row"><span class="label">完成率</span><span id="statsRate">0%</span></div>
+                    <div class="stats-bar"><div class="stats-bar-fill" id="statsBar" style="width:0;background:var(--success)"></div></div>
+                    <div id="statsDistribution"></div>
                 </div>
 
                 <div class="export-section">
-                    <button class="export-btn" onclick="exportResults()">
-                        📥 导出标注结果
-                    </button>
+                    <div style="display:flex;gap:0.5rem;align-items:center">
+                        <select id="exportFormat" style="padding:0.6rem;border:1px solid var(--border);border-radius:8px;background:var(--input-bg);color:var(--text);font-size:0.8rem">
+                            <option value="json">JSON</option>
+                            <option value="jsonl">JSONL</option>
+                            <option value="csv">CSV</option>
+                        </select>
+                        <button class="export-btn" onclick="exportResults()" style="flex:1">
+                            📥 导出标注结果
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
     </main>
+
+    <div class="modal-overlay" id="shortcutModal" onclick="closeShortcutModal(event)">
+        <div class="modal">
+            <h3>快捷键帮助</h3>
+            <table>
+                <tr><td><kbd>←</kbd></td><td>上一条任务</td></tr>
+                <tr><td><kbd>→</kbd></td><td>下一条任务</td></tr>
+                <tr><td><kbd>1</kbd>-<kbd>9</kbd></td><td>选择评分/选项</td></tr>
+                <tr><td><kbd>Ctrl</kbd>+<kbd>Z</kbd></td><td>撤销当前任务标注</td></tr>
+                <tr><td><kbd>?</kbd></td><td>打开/关闭此帮助</td></tr>
+            </table>
+            <button class="modal-close" onclick="document.getElementById('shortcutModal').classList.remove('open')">关闭</button>
+        </div>
+    </div>
 
     <div class="toast" id="toast"></div>
 
@@ -493,10 +934,16 @@
         const TASKS = {{ tasks_json | safe }};
         const SCHEMA = {{ schema_json | safe }};
         const TOTAL_TASKS = {{ total_tasks }};
+        const ANNOTATION_TYPE = '{{ annotation_type }}';
+        const ANNOTATION_CONFIG = {{ annotation_config_json | safe }};
+        const PAGE_SIZE = {{ page_size }};
 
         // State
         let currentIndex = 0;
         let responses = {};
+        let sidebarPage = 0;
+        let filteredIndices = [...Array(TASKS.length).keys()];
+        let undoHistory = {};  // taskId -> previous response (or null)
 
         // Load saved responses from localStorage
         const storageKey = 'datalabel_' + (SCHEMA.project_name || 'default').replace(/\s+/g, '_');
@@ -511,13 +958,24 @@
 
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
+            initTheme();
+            initAnnotationWidget();
             renderTask(currentIndex);
             updateProgress();
+            updateStats();
+            renderTaskList();
         });
 
         // Keyboard shortcuts
         document.addEventListener('keydown', (e) => {
-            if (e.target.tagName === 'TEXTAREA') return;
+            // Ctrl+Z works everywhere
+            if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+                e.preventDefault();
+                undoAnnotation();
+                return;
+            }
+
+            if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') return;
 
             switch(e.key) {
                 case 'ArrowLeft':
@@ -526,24 +984,310 @@
                 case 'ArrowRight':
                     nextTask();
                     break;
-                case '1':
-                    selectScore(getScoreValue(0));
+                case '?':
+                    toggleShortcutModal();
                     break;
-                case '2':
-                    selectScore(getScoreValue(1));
-                    break;
-                case '3':
-                    selectScore(getScoreValue(2));
+                default:
+                    handleAnnotationShortcut(e.key);
                     break;
             }
         });
 
-        function getScoreValue(index) {
-            const buttons = document.querySelectorAll('.score-btn');
-            if (buttons[index]) {
-                return buttons[index].dataset.score;
+        // ==================== Annotation Widget ====================
+
+        function initAnnotationWidget() {
+            const widget = document.getElementById('annotationWidget');
+            const title = document.getElementById('annotationTitle');
+            const hints = document.getElementById('shortcutsHint');
+
+            if (ANNOTATION_TYPE === 'scoring') {
+                title.textContent = '评分';
+                hints.innerHTML = '快捷键: <kbd>←</kbd> <kbd>→</kbd> 导航 · <kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd> 评分';
+                renderScoringWidget(widget);
+            } else if (ANNOTATION_TYPE === 'single_choice') {
+                title.textContent = '选择';
+                hints.innerHTML = '快捷键: <kbd>←</kbd> <kbd>→</kbd> 导航 · <kbd>1</kbd>-<kbd>9</kbd> 选择';
+                renderChoiceWidget(widget, false);
+            } else if (ANNOTATION_TYPE === 'multi_choice') {
+                title.textContent = '多选';
+                hints.innerHTML = '快捷键: <kbd>←</kbd> <kbd>→</kbd> 导航 · <kbd>1</kbd>-<kbd>9</kbd> 切换选项';
+                renderChoiceWidget(widget, true);
+            } else if (ANNOTATION_TYPE === 'text') {
+                title.textContent = '文本标注';
+                hints.innerHTML = '快捷键: <kbd>←</kbd> <kbd>→</kbd> 导航';
+                renderTextWidget(widget);
+            } else if (ANNOTATION_TYPE === 'ranking') {
+                title.textContent = '排序';
+                hints.innerHTML = '快捷键: <kbd>←</kbd> <kbd>→</kbd> 导航 · 拖拽排序';
+                renderRankingWidget(widget);
             }
-            return null;
+        }
+
+        // ---------- Scoring ----------
+
+        function renderScoringWidget(container) {
+            const rubric = SCHEMA.scoring_rubric || [];
+            let html = '<div class="score-buttons" id="scoreButtons">';
+
+            if (rubric.length > 0) {
+                rubric.forEach(r => {
+                    const desc = r.description || r.criteria || r.label || '';
+                    html += `<button class="score-btn" data-score="${r.score}" onclick="selectScore('${r.score}')">
+                        ${r.score} - ${desc}
+                    </button>`;
+                });
+            } else {
+                html += `<button class="score-btn" data-score="1" onclick="selectScore('1')">✓ 正确</button>`;
+                html += `<button class="score-btn" data-score="0.5" onclick="selectScore('0.5')">△ 部分正确</button>`;
+                html += `<button class="score-btn" data-score="0" onclick="selectScore('0')">✗ 错误</button>`;
+            }
+
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        function selectScore(score) {
+            if (score === null) return;
+            document.querySelectorAll('.score-btn').forEach(btn => {
+                btn.classList.remove('selected');
+                if (btn.dataset.score === String(score)) {
+                    btn.classList.add('selected');
+                }
+            });
+            saveCurrentResponse();
+        }
+
+        function restoreScoring(saved) {
+            document.querySelectorAll('.score-btn').forEach(btn => {
+                btn.classList.remove('selected');
+                if (saved && btn.dataset.score === String(saved.score)) {
+                    btn.classList.add('selected');
+                }
+            });
+        }
+
+        function getScoringValue() {
+            const btn = document.querySelector('.score-btn.selected');
+            return btn ? { score: parseFloat(btn.dataset.score) } : null;
+        }
+
+        // ---------- Single/Multi Choice ----------
+
+        function renderChoiceWidget(container, multi) {
+            const options = (ANNOTATION_CONFIG.options || []);
+            let html = '<div class="choice-buttons" id="choiceButtons">';
+
+            options.forEach((opt, i) => {
+                const value = opt.value || opt.label;
+                const label = opt.label || opt.value;
+                html += `<button class="choice-btn" data-value="${value}" onclick="selectChoice('${value}', ${multi})">
+                    ${i + 1}. ${label}
+                </button>`;
+            });
+
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        function selectChoice(value, multi) {
+            if (multi) {
+                const btn = document.querySelector(`.choice-btn[data-value="${value}"]`);
+                if (btn) btn.classList.toggle('selected');
+            } else {
+                document.querySelectorAll('.choice-btn').forEach(btn => {
+                    btn.classList.remove('selected');
+                    if (btn.dataset.value === value) {
+                        btn.classList.add('selected');
+                    }
+                });
+            }
+            saveCurrentResponse();
+        }
+
+        function restoreChoice(saved) {
+            document.querySelectorAll('.choice-btn').forEach(btn => btn.classList.remove('selected'));
+            if (!saved) return;
+
+            if (ANNOTATION_TYPE === 'single_choice' && saved.choice) {
+                const btn = document.querySelector(`.choice-btn[data-value="${saved.choice}"]`);
+                if (btn) btn.classList.add('selected');
+            } else if (ANNOTATION_TYPE === 'multi_choice' && saved.choices) {
+                saved.choices.forEach(val => {
+                    const btn = document.querySelector(`.choice-btn[data-value="${val}"]`);
+                    if (btn) btn.classList.add('selected');
+                });
+            }
+        }
+
+        function getChoiceValue() {
+            if (ANNOTATION_TYPE === 'single_choice') {
+                const btn = document.querySelector('.choice-btn.selected');
+                return btn ? { choice: btn.dataset.value } : null;
+            } else {
+                const selected = Array.from(document.querySelectorAll('.choice-btn.selected'))
+                    .map(btn => btn.dataset.value);
+                return selected.length > 0 ? { choices: selected } : null;
+            }
+        }
+
+        // ---------- Text ----------
+
+        function renderTextWidget(container) {
+            const placeholder = ANNOTATION_CONFIG.placeholder || '请输入标注文本...';
+            const maxLength = ANNOTATION_CONFIG.max_length || 0;
+            let html = '<div class="text-annotation">';
+            html += `<textarea id="annotationText" placeholder="${placeholder}"`;
+            if (maxLength > 0) html += ` maxlength="${maxLength}"`;
+            html += ` oninput="onTextInput()"></textarea>`;
+            if (maxLength > 0) {
+                html += `<div class="char-count"><span id="charCount">0</span> / ${maxLength}</div>`;
+            }
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        function onTextInput() {
+            const textarea = document.getElementById('annotationText');
+            const countEl = document.getElementById('charCount');
+            if (countEl) countEl.textContent = textarea.value.length;
+            saveCurrentResponse();
+        }
+
+        function restoreText(saved) {
+            const textarea = document.getElementById('annotationText');
+            if (textarea) {
+                textarea.value = (saved && saved.text) || '';
+                const countEl = document.getElementById('charCount');
+                if (countEl) countEl.textContent = textarea.value.length;
+            }
+        }
+
+        function getTextValue() {
+            const textarea = document.getElementById('annotationText');
+            return textarea && textarea.value.trim() ? { text: textarea.value.trim() } : null;
+        }
+
+        // ---------- Ranking ----------
+
+        let rankingOrder = [];
+
+        function renderRankingWidget(container) {
+            const options = (ANNOTATION_CONFIG.options || []);
+            rankingOrder = options.map(opt => opt.value || opt.label);
+
+            let html = '<div class="ranking-list" id="rankingList">';
+            rankingOrder.forEach((value, i) => {
+                const label = options.find(o => (o.value || o.label) === value)?.label || value;
+                html += `<div class="ranking-item" draggable="true" data-value="${value}">
+                    <span class="drag-handle">☰</span>
+                    <span class="rank-number">${i + 1}</span>
+                    <span>${label}</span>
+                </div>`;
+            });
+            html += '</div>';
+            container.innerHTML = html;
+
+            initDragAndDrop();
+        }
+
+        function initDragAndDrop() {
+            const list = document.getElementById('rankingList');
+            if (!list) return;
+
+            let draggedItem = null;
+
+            list.addEventListener('dragstart', (e) => {
+                draggedItem = e.target.closest('.ranking-item');
+                if (draggedItem) {
+                    draggedItem.classList.add('dragging');
+                    e.dataTransfer.effectAllowed = 'move';
+                }
+            });
+
+            list.addEventListener('dragend', (e) => {
+                if (draggedItem) {
+                    draggedItem.classList.remove('dragging');
+                    draggedItem = null;
+                    updateRankNumbers();
+                    saveCurrentResponse();
+                }
+            });
+
+            list.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                const afterElement = getDragAfterElement(list, e.clientY);
+                if (draggedItem) {
+                    if (afterElement) {
+                        list.insertBefore(draggedItem, afterElement);
+                    } else {
+                        list.appendChild(draggedItem);
+                    }
+                }
+            });
+        }
+
+        function getDragAfterElement(container, y) {
+            const elements = [...container.querySelectorAll('.ranking-item:not(.dragging)')];
+            return elements.reduce((closest, child) => {
+                const box = child.getBoundingClientRect();
+                const offset = y - box.top - box.height / 2;
+                if (offset < 0 && offset > closest.offset) {
+                    return { offset: offset, element: child };
+                }
+                return closest;
+            }, { offset: Number.NEGATIVE_INFINITY }).element;
+        }
+
+        function updateRankNumbers() {
+            const items = document.querySelectorAll('.ranking-item');
+            rankingOrder = [];
+            items.forEach((item, i) => {
+                item.querySelector('.rank-number').textContent = i + 1;
+                rankingOrder.push(item.dataset.value);
+            });
+        }
+
+        function restoreRanking(saved) {
+            if (!saved || !saved.ranking) {
+                // Reset to default order
+                const options = (ANNOTATION_CONFIG.options || []);
+                rankingOrder = options.map(opt => opt.value || opt.label);
+            } else {
+                rankingOrder = saved.ranking;
+            }
+
+            const list = document.getElementById('rankingList');
+            if (!list) return;
+
+            // Reorder items
+            rankingOrder.forEach(value => {
+                const item = list.querySelector(`.ranking-item[data-value="${value}"]`);
+                if (item) list.appendChild(item);
+            });
+            updateRankNumbers();
+        }
+
+        function getRankingValue() {
+            return rankingOrder.length > 0 ? { ranking: [...rankingOrder] } : null;
+        }
+
+        // ==================== Common Functions ====================
+
+        function handleAnnotationShortcut(key) {
+            const num = parseInt(key);
+            if (isNaN(num) || num < 1) return;
+
+            if (ANNOTATION_TYPE === 'scoring') {
+                const btns = document.querySelectorAll('.score-btn');
+                if (btns[num - 1]) {
+                    selectScore(btns[num - 1].dataset.score);
+                }
+            } else if (ANNOTATION_TYPE === 'single_choice' || ANNOTATION_TYPE === 'multi_choice') {
+                const btns = document.querySelectorAll('.choice-btn');
+                if (btns[num - 1]) {
+                    selectChoice(btns[num - 1].dataset.value, ANNOTATION_TYPE === 'multi_choice');
+                }
+            }
         }
 
         function renderTask(index) {
@@ -590,63 +1334,61 @@
             }
 
             // Restore saved response
-            const savedResponse = responses[taskId];
-            if (savedResponse) {
-                // Restore score
-                document.querySelectorAll('.score-btn').forEach(btn => {
-                    btn.classList.remove('selected');
-                    if (btn.dataset.score === String(savedResponse.score)) {
-                        btn.classList.add('selected');
-                    }
-                });
-                // Restore comment
-                document.getElementById('comment').value = savedResponse.comment || '';
-            } else {
-                document.querySelectorAll('.score-btn').forEach(btn => btn.classList.remove('selected'));
-                document.getElementById('comment').value = '';
-            }
+            const saved = responses[taskId];
+            restoreAnnotation(saved);
+            document.getElementById('comment').value = (saved && saved.comment) || '';
 
             // Update navigation buttons
             document.getElementById('prevBtn').disabled = index === 0;
             document.getElementById('nextBtn').textContent = index === TASKS.length - 1 ? '完成 ✓' : '下一条 →';
 
             currentIndex = index;
+            updateUndoBtn(taskId);
+            renderTaskList();
         }
 
-        function selectScore(score) {
-            if (score === null) return;
+        function restoreAnnotation(saved) {
+            if (ANNOTATION_TYPE === 'scoring') {
+                restoreScoring(saved);
+            } else if (ANNOTATION_TYPE === 'single_choice' || ANNOTATION_TYPE === 'multi_choice') {
+                restoreChoice(saved);
+            } else if (ANNOTATION_TYPE === 'text') {
+                restoreText(saved);
+            } else if (ANNOTATION_TYPE === 'ranking') {
+                restoreRanking(saved);
+            }
+        }
 
-            // Update UI
-            document.querySelectorAll('.score-btn').forEach(btn => {
-                btn.classList.remove('selected');
-                if (btn.dataset.score === score) {
-                    btn.classList.add('selected');
-                }
-            });
-
-            // Save response
-            saveCurrentResponse();
+        function getAnnotationValue() {
+            if (ANNOTATION_TYPE === 'scoring') return getScoringValue();
+            if (ANNOTATION_TYPE === 'single_choice' || ANNOTATION_TYPE === 'multi_choice') return getChoiceValue();
+            if (ANNOTATION_TYPE === 'text') return getTextValue();
+            if (ANNOTATION_TYPE === 'ranking') return getRankingValue();
+            return null;
         }
 
         function saveCurrentResponse() {
             const task = TASKS[currentIndex];
             const taskId = task.id || `TASK_${String(currentIndex + 1).padStart(3, '0')}`;
 
-            const selectedBtn = document.querySelector('.score-btn.selected');
-            const score = selectedBtn ? selectedBtn.dataset.score : null;
+            const value = getAnnotationValue();
             const comment = document.getElementById('comment').value.trim();
 
-            if (score !== null) {
+            if (value !== null) {
+                // Save undo history
+                undoHistory[taskId] = responses[taskId] ? { ...responses[taskId] } : null;
+
                 responses[taskId] = {
                     task_id: taskId,
-                    score: parseFloat(score),
+                    ...value,
                     comment: comment,
                     annotated_at: new Date().toISOString(),
                 };
 
-                // Save to localStorage
                 localStorage.setItem(storageKey, JSON.stringify(responses));
                 updateProgress();
+                updateStats();
+                updateUndoBtn(taskId);
                 showToast('已保存');
             }
         }
@@ -684,24 +1426,43 @@
         }
 
         function exportResults() {
-            const exportData = {
-                schema: SCHEMA,
-                metadata: {
-                    exported_at: new Date().toISOString(),
-                    total_tasks: TOTAL_TASKS,
-                    completed_tasks: Object.keys(responses).length,
-                    tool: 'DataLabel',
-                    version: '0.1.0',
-                },
-                responses: Object.values(responses),
-            };
+            const format = document.getElementById('exportFormat').value;
+            const resp = Object.values(responses);
+            const baseName = (SCHEMA.project_name || 'annotation').replace(/\s+/g, '_');
+            let content, mimeType, ext;
 
-            const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+            if (format === 'jsonl') {
+                content = resp.map(r => JSON.stringify(r)).join('\n');
+                mimeType = 'application/x-jsonlines';
+                ext = 'jsonl';
+            } else if (format === 'csv') {
+                content = exportAsCSV(resp);
+                mimeType = 'text/csv';
+                ext = 'csv';
+            } else {
+                const exportData = {
+                    schema: SCHEMA,
+                    metadata: {
+                        exported_at: new Date().toISOString(),
+                        total_tasks: TOTAL_TASKS,
+                        completed_tasks: resp.length,
+                        annotation_type: ANNOTATION_TYPE,
+                        tool: 'DataLabel',
+                        version: '0.1.0',
+                    },
+                    responses: resp,
+                };
+                content = JSON.stringify(exportData, null, 2);
+                mimeType = 'application/json';
+                ext = 'json';
+            }
+
+            const blob = new Blob([content], { type: mimeType });
             const url = URL.createObjectURL(blob);
 
             const a = document.createElement('a');
             a.href = url;
-            a.download = `${(SCHEMA.project_name || 'annotation').replace(/\s+/g, '_')}_results.json`;
+            a.download = `${baseName}_results.${ext}`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
@@ -709,6 +1470,255 @@
 
             showToast('导出成功!');
         }
+
+        function exportAsCSV(rows) {
+            if (rows.length === 0) return '';
+
+            // Collect all keys
+            const keys = new Set();
+            rows.forEach(r => Object.keys(r).forEach(k => keys.add(k)));
+            const headers = [...keys];
+
+            const escape = (val) => {
+                if (val === null || val === undefined) return '';
+                const s = typeof val === 'object' ? JSON.stringify(val) : String(val);
+                if (s.includes(',') || s.includes('"') || s.includes('\n')) {
+                    return '"' + s.replace(/"/g, '""') + '"';
+                }
+                return s;
+            };
+
+            const lines = [headers.map(escape).join(',')];
+            rows.forEach(r => {
+                lines.push(headers.map(h => escape(r[h])).join(','));
+            });
+            return lines.join('\n');
+        }
+
+        // ==================== Task Sidebar ====================
+
+        function filterTaskList() {
+            const query = (document.getElementById('sidebarSearch')?.value || '').toLowerCase();
+            const filter = document.getElementById('sidebarFilter')?.value || 'all';
+
+            filteredIndices = [];
+            for (let i = 0; i < TASKS.length; i++) {
+                const task = TASKS[i];
+                const taskId = task.id || `TASK_${String(i + 1).padStart(3, '0')}`;
+                const isComplete = !!responses[taskId];
+
+                // Filter by status
+                if (filter === 'completed' && !isComplete) continue;
+                if (filter === 'pending' && isComplete) continue;
+
+                // Filter by search query
+                if (query) {
+                    const data = task.data || task;
+                    const text = taskId + ' ' + Object.values(data).map(v => String(v)).join(' ');
+                    if (!text.toLowerCase().includes(query)) continue;
+                }
+
+                filteredIndices.push(i);
+            }
+
+            sidebarPage = 0;
+            renderTaskList();
+        }
+
+        function renderTaskList() {
+            const container = document.getElementById('taskListContainer');
+            if (!container) return;
+
+            const start = sidebarPage * PAGE_SIZE;
+            const end = Math.min(start + PAGE_SIZE, filteredIndices.length);
+            const pageIndices = filteredIndices.slice(start, end);
+
+            container.innerHTML = '';
+            pageIndices.forEach(i => {
+                const task = TASKS[i];
+                const taskId = task.id || `TASK_${String(i + 1).padStart(3, '0')}`;
+                const isComplete = !!responses[taskId];
+                const isCurrent = (i === currentIndex);
+
+                const item = document.createElement('div');
+                item.className = 'task-list-item';
+                if (isComplete) item.className += ' complete';
+                if (isCurrent) item.className += ' current';
+                item.textContent = taskId;
+                item.title = taskId;
+                item.onclick = () => { renderTask(i); renderTaskList(); };
+                container.appendChild(item);
+            });
+
+            renderSidebarPagination();
+        }
+
+        function renderSidebarPagination() {
+            const pag = document.getElementById('sidebarPagination');
+            if (!pag) return;
+
+            const totalPages = Math.ceil(filteredIndices.length / PAGE_SIZE);
+            if (totalPages <= 1) {
+                pag.innerHTML = `<span>${filteredIndices.length} 条</span>`;
+                return;
+            }
+
+            pag.innerHTML = `
+                <button onclick="sidebarPrevPage()" ${sidebarPage === 0 ? 'disabled' : ''}>‹</button>
+                <span>${sidebarPage + 1} / ${totalPages}</span>
+                <button onclick="sidebarNextPage()" ${sidebarPage >= totalPages - 1 ? 'disabled' : ''}>›</button>
+            `;
+        }
+
+        function sidebarPrevPage() {
+            if (sidebarPage > 0) {
+                sidebarPage--;
+                renderTaskList();
+            }
+        }
+
+        function sidebarNextPage() {
+            const totalPages = Math.ceil(filteredIndices.length / PAGE_SIZE);
+            if (sidebarPage < totalPages - 1) {
+                sidebarPage++;
+                renderTaskList();
+            }
+        }
+
+        // ==================== Theme ====================
+
+        function initTheme() {
+            const saved = localStorage.getItem('datalabel_theme');
+            if (saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                document.getElementById('themeToggle').textContent = '☀️';
+            }
+        }
+
+        function toggleTheme() {
+            const html = document.documentElement;
+            const isDark = html.getAttribute('data-theme') === 'dark';
+            if (isDark) {
+                html.removeAttribute('data-theme');
+                document.getElementById('themeToggle').textContent = '🌙';
+                localStorage.setItem('datalabel_theme', 'light');
+            } else {
+                html.setAttribute('data-theme', 'dark');
+                document.getElementById('themeToggle').textContent = '☀️';
+                localStorage.setItem('datalabel_theme', 'dark');
+            }
+        }
+
+        // ==================== Undo ====================
+
+        function updateUndoBtn(taskId) {
+            const btn = document.getElementById('undoBtn');
+            btn.disabled = !undoHistory.hasOwnProperty(taskId);
+        }
+
+        function undoAnnotation() {
+            const task = TASKS[currentIndex];
+            const taskId = task.id || `TASK_${String(currentIndex + 1).padStart(3, '0')}`;
+
+            if (!undoHistory.hasOwnProperty(taskId)) return;
+
+            const prev = undoHistory[taskId];
+            if (prev === null) {
+                delete responses[taskId];
+            } else {
+                responses[taskId] = prev;
+            }
+            delete undoHistory[taskId];
+
+            localStorage.setItem(storageKey, JSON.stringify(responses));
+            restoreAnnotation(responses[taskId] || null);
+            document.getElementById('comment').value = (responses[taskId] && responses[taskId].comment) || '';
+            updateProgress();
+            updateStats();
+            updateUndoBtn(taskId);
+            renderTaskList();
+            showToast('已撤销');
+        }
+
+        // ==================== Statistics ====================
+
+        function updateStats() {
+            const completed = Object.keys(responses).length;
+            const pending = TOTAL_TASKS - completed;
+            const rate = TOTAL_TASKS > 0 ? (completed / TOTAL_TASKS * 100) : 0;
+
+            const el = (id) => document.getElementById(id);
+            el('statsCompleted').textContent = completed;
+            el('statsPending').textContent = pending;
+            el('statsRate').textContent = rate.toFixed(1) + '%';
+            el('statsBar').style.width = rate + '%';
+
+            // Distribution for scoring
+            const distEl = el('statsDistribution');
+            if (ANNOTATION_TYPE === 'scoring' && completed > 0) {
+                const counts = {};
+                Object.values(responses).forEach(r => {
+                    if (r.score !== undefined) {
+                        const s = String(r.score);
+                        counts[s] = (counts[s] || 0) + 1;
+                    }
+                });
+
+                const labels = Object.keys(counts).sort();
+                const maxCount = Math.max(...Object.values(counts));
+
+                if (labels.length > 0) {
+                    let html = '<div class="stats-distribution">';
+                    labels.forEach(label => {
+                        const h = maxCount > 0 ? (counts[label] / maxCount * 100) : 0;
+                        html += `<div class="stats-dist-bar" style="height:${Math.max(h, 5)}%" title="${label}: ${counts[label]}"><span class="dist-label">${label}</span></div>`;
+                    });
+                    html += '</div>';
+                    distEl.innerHTML = html;
+                } else {
+                    distEl.innerHTML = '';
+                }
+            } else if (ANNOTATION_TYPE === 'single_choice' && completed > 0) {
+                const counts = {};
+                Object.values(responses).forEach(r => {
+                    if (r.choice) {
+                        counts[r.choice] = (counts[r.choice] || 0) + 1;
+                    }
+                });
+
+                const labels = Object.keys(counts);
+                const maxCount = Math.max(...Object.values(counts));
+
+                if (labels.length > 0) {
+                    let html = '<div class="stats-distribution">';
+                    labels.forEach(label => {
+                        const h = maxCount > 0 ? (counts[label] / maxCount * 100) : 0;
+                        const shortLabel = label.length > 4 ? label.slice(0, 4) + '..' : label;
+                        html += `<div class="stats-dist-bar" style="height:${Math.max(h, 5)}%" title="${label}: ${counts[label]}"><span class="dist-label">${shortLabel}</span></div>`;
+                    });
+                    html += '</div>';
+                    distEl.innerHTML = html;
+                } else {
+                    distEl.innerHTML = '';
+                }
+            } else {
+                distEl.innerHTML = '';
+            }
+        }
+
+        // ==================== Shortcut Modal ====================
+
+        function toggleShortcutModal() {
+            document.getElementById('shortcutModal').classList.toggle('open');
+        }
+
+        function closeShortcutModal(event) {
+            if (event.target === event.currentTarget) {
+                event.currentTarget.classList.remove('open');
+            }
+        }
+
+        // ==================== Toast ====================
 
         function showToast(message) {
             const toast = document.getElementById('toast');

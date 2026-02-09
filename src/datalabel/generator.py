@@ -8,6 +8,8 @@ from typing import Any, Dict, List, Optional
 
 from jinja2 import Environment, PackageLoader, select_autoescape
 
+from datalabel.validator import SchemaValidator
+
 try:
     import markdown
 
@@ -46,6 +48,7 @@ class AnnotatorGenerator:
         output_path: str,
         guidelines: Optional[str] = None,
         title: Optional[str] = None,
+        page_size: int = 50,
     ) -> GeneratorResult:
         """Generate an HTML annotation interface.
 
@@ -62,12 +65,27 @@ class AnnotatorGenerator:
         result = GeneratorResult()
 
         try:
+            # Validate inputs
+            validator = SchemaValidator()
+            schema_validation = validator.validate_schema(schema)
+            if not schema_validation.valid:
+                result.success = False
+                result.error = "Schema 验证失败:\n" + "\n".join(schema_validation.errors)
+                return result
+
+            task_validation = validator.validate_tasks(tasks, schema)
+            if not task_validation.valid:
+                result.success = False
+                result.error = "任务数据验证失败:\n" + "\n".join(task_validation.errors)
+                return result
+
             # Prepare template data
             template_data = self._prepare_template_data(
                 schema=schema,
                 tasks=tasks,
                 guidelines=guidelines,
                 title=title,
+                page_size=page_size,
             )
 
             # Render template
@@ -155,6 +173,7 @@ class AnnotatorGenerator:
         tasks: List[Dict[str, Any]],
         guidelines: Optional[str],
         title: Optional[str],
+        page_size: int = 50,
     ) -> Dict[str, Any]:
         """Prepare data for template rendering."""
 
@@ -175,6 +194,15 @@ class AnnotatorGenerator:
         # Extract scoring rubric
         scoring_rubric = schema.get("scoring_rubric", [])
 
+        # Extract annotation config
+        annotation_config = schema.get("annotation_config", {})
+        if annotation_config:
+            annotation_type = annotation_config.get("type", "scoring")
+        elif scoring_rubric:
+            annotation_type = "scoring"
+        else:
+            annotation_type = "scoring"
+
         # Prepare task data (use the 'data' field if present)
         prepared_tasks = []
         for i, task in enumerate(tasks):
@@ -192,10 +220,14 @@ class AnnotatorGenerator:
             "schema": schema,
             "fields": display_fields,
             "scoring_rubric": scoring_rubric,
+            "annotation_type": annotation_type,
+            "annotation_config": annotation_config,
+            "annotation_config_json": json.dumps(annotation_config, ensure_ascii=False),
             "tasks": prepared_tasks,
             "tasks_json": json.dumps(prepared_tasks, ensure_ascii=False),
             "schema_json": json.dumps(schema, ensure_ascii=False),
             "guidelines_html": guidelines_html,
             "generated_at": datetime.now().isoformat(),
             "total_tasks": len(tasks),
+            "page_size": page_size,
         }

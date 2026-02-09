@@ -1,5 +1,7 @@
 """DataLabel CLI - 命令行界面."""
 
+import csv
+import io
 import json
 import sys
 from pathlib import Path
@@ -60,12 +62,14 @@ def generate(analysis_dir: str, output: Optional[str]):
     "-g", "--guidelines", type=click.Path(exists=True), help="标注指南文件路径 (Markdown 格式)"
 )
 @click.option("-t", "--title", type=str, help="标注界面标题")
+@click.option("--page-size", type=int, default=50, help="任务列表每页显示数 (默认: 50)")
 def create(
     schema_file: str,
     tasks_file: str,
     output: str,
     guidelines: Optional[str],
     title: Optional[str],
+    page_size: int,
 ):
     """从 Schema 和任务文件创建标注界面
 
@@ -102,6 +106,7 @@ def create(
         output_path=output,
         guidelines=guidelines_content,
         title=title,
+        page_size=page_size,
     )
 
     if result.success:
@@ -178,8 +183,14 @@ def iaa(result_files: tuple):
     click.echo(f"  共同任务: {metrics['common_tasks']}")
     click.echo(f"  完全一致率: {metrics['exact_agreement_rate']:.1%}")
 
-    click.echo("\n两两一致矩阵:")
+    if "fleiss_kappa" in metrics:
+        click.echo(f"  Fleiss' Kappa: {metrics['fleiss_kappa']:.3f}")
+    if "krippendorff_alpha" in metrics:
+        click.echo(f"  Krippendorff's Alpha: {metrics['krippendorff_alpha']:.3f}")
+
+    click.echo("\n两两一致矩阵 (Agreement / Cohen's Kappa):")
     files = [Path(f).name for f in metrics["files"]]
+    kappa = metrics.get("cohens_kappa", [])
 
     # 打印表头
     header = "          " + "  ".join(f"{f[:8]:>8}" for f in files)
@@ -187,8 +198,193 @@ def iaa(result_files: tuple):
 
     # 打印矩阵
     for i, row in enumerate(metrics["pairwise_agreement"]):
-        row_str = f"{files[i][:8]:>8}  " + "  ".join(f"{v:>8.1%}" for v in row)
+        parts = []
+        for j, v in enumerate(row):
+            if i == j:
+                parts.append(f"{'---':>8}")
+            else:
+                k = kappa[i][j] if kappa else 0
+                parts.append(f"{v:.0%}/κ{k:.2f}")
+        row_str = f"{files[i][:8]:>8}  " + "  ".join(parts)
         click.echo(row_str)
+
+
+@main.command()
+@click.argument("schema_file", type=click.Path(exists=True))
+@click.option("-t", "--tasks", "tasks_file", type=click.Path(exists=True), help="任务文件路径")
+def validate(schema_file: str, tasks_file: Optional[str]):
+    """验证 Schema 和任务数据格式
+
+    SCHEMA_FILE: 数据 Schema JSON 文件
+    """
+    from datalabel.validator import SchemaValidator
+
+    with open(schema_file, "r", encoding="utf-8") as f:
+        schema = json.load(f)
+
+    validator = SchemaValidator()
+    result = validator.validate_schema(schema)
+
+    if result.errors:
+        click.echo("✗ Schema 验证失败:", err=True)
+        for err in result.errors:
+            click.echo(f"  - {err}", err=True)
+    elif result.warnings:
+        click.echo("⚠ Schema 验证通过 (有警告):")
+        for warn in result.warnings:
+            click.echo(f"  - {warn}")
+    else:
+        click.echo("✓ Schema 验证通过")
+
+    if tasks_file:
+        with open(tasks_file, "r", encoding="utf-8") as f:
+            tasks_data = json.load(f)
+
+        if isinstance(tasks_data, list):
+            tasks = tasks_data
+        else:
+            tasks = tasks_data.get("samples", tasks_data.get("tasks", []))
+
+        task_result = validator.validate_tasks(tasks, schema)
+        if task_result.errors:
+            click.echo("✗ 任务数据验证失败:", err=True)
+            for err in task_result.errors:
+                click.echo(f"  - {err}", err=True)
+        elif task_result.warnings:
+            click.echo(f"⚠ 任务数据验证通过 ({len(tasks)} 条, 有警告):")
+            for warn in task_result.warnings:
+                click.echo(f"  - {warn}")
+        else:
+            click.echo(f"✓ 任务数据验证通过 ({len(tasks)} 条)")
+
+        if task_result.errors or result.errors:
+            sys.exit(1)
+    elif result.errors:
+        sys.exit(1)
+
+
+@main.command(name="export")
+@click.argument("result_file", type=click.Path(exists=True))
+@click.option("-o", "--output", type=click.Path(), required=True, help="输出文件路径")
+@click.option(
+    "-f",
+    "--format",
+    "fmt",
+    type=click.Choice(["json", "jsonl", "csv"]),
+    default="json",
+    help="输出格式 (默认: json)",
+)
+def export_results(result_file: str, output: str, fmt: str):
+    """转换标注结果文件格式
+
+    RESULT_FILE: 标注结果 JSON 文件
+    """
+    with open(result_file, "r", encoding="utf-8") as f:
+        data = json.load(f)
+
+    # Extract responses
+    if isinstance(data, list):
+        responses = data
+    elif isinstance(data, dict) and "responses" in data:
+        responses = data["responses"]
+    else:
+        click.echo("错误: 无法识别的结果文件格式", err=True)
+        sys.exit(1)
+
+    output_path = Path(output)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    if fmt == "json":
+        with open(output_path, "w", encoding="utf-8") as f:
+            json.dump(responses, f, ensure_ascii=False, indent=2)
+    elif fmt == "jsonl":
+        with open(output_path, "w", encoding="utf-8") as f:
+            for r in responses:
+                f.write(json.dumps(r, ensure_ascii=False) + "\n")
+    elif fmt == "csv":
+        if not responses:
+            output_path.write_text("", encoding="utf-8")
+        else:
+            keys = list(dict.fromkeys(k for r in responses for k in r.keys()))
+            buf = io.StringIO()
+            writer = csv.DictWriter(buf, fieldnames=keys, extrasaction="ignore")
+            writer.writeheader()
+            for r in responses:
+                row = {}
+                for k in keys:
+                    v = r.get(k)
+                    row[k] = json.dumps(v, ensure_ascii=False) if isinstance(v, (list, dict)) else v
+                writer.writerow(row)
+            output_path.write_text(buf.getvalue(), encoding="utf-8")
+
+    click.echo(f"✓ 导出成功: {output_path} ({fmt}, {len(responses)} 条)")
+
+
+@main.command(name="import-tasks")
+@click.argument("input_file", type=click.Path(exists=True))
+@click.option("-o", "--output", type=click.Path(), required=True, help="输出 JSON 文件路径")
+@click.option(
+    "-f",
+    "--format",
+    "fmt",
+    type=click.Choice(["json", "jsonl", "csv"]),
+    default=None,
+    help="输入格式 (默认: 自动检测)",
+)
+def import_tasks(input_file: str, output: str, fmt: Optional[str]):
+    """导入任务数据并转换为 DataLabel JSON 格式
+
+    INPUT_FILE: 输入文件路径 (JSON/JSONL/CSV)
+    """
+    input_path = Path(input_file)
+
+    # Auto-detect format
+    if fmt is None:
+        suffix = input_path.suffix.lower()
+        if suffix == ".jsonl":
+            fmt = "jsonl"
+        elif suffix == ".csv":
+            fmt = "csv"
+        else:
+            fmt = "json"
+
+    tasks = []
+
+    if fmt == "json":
+        with open(input_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        if isinstance(data, list):
+            tasks = data
+        elif isinstance(data, dict):
+            tasks = data.get("samples", data.get("tasks", []))
+    elif fmt == "jsonl":
+        with open(input_path, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if line:
+                    tasks.append(json.loads(line))
+    elif fmt == "csv":
+        with open(input_path, "r", encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                task = {}
+                for k, v in row.items():
+                    if v and v.startswith(("{", "[")):
+                        try:
+                            task[k] = json.loads(v)
+                        except json.JSONDecodeError:
+                            task[k] = v
+                    else:
+                        task[k] = v
+                tasks.append(task)
+
+    output_path = Path(output)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    with open(output_path, "w", encoding="utf-8") as f:
+        json.dump(tasks, f, ensure_ascii=False, indent=2)
+
+    click.echo(f"✓ 导入成功: {output_path} ({len(tasks)} 条)")
 
 
 if __name__ == "__main__":

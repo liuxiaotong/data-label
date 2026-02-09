@@ -55,7 +55,7 @@ def create_server() -> "Server":
                     "properties": {
                         "schema": {
                             "type": "object",
-                            "description": "数据 Schema 定义",
+                            "description": "数据 Schema 定义。支持 scoring_rubric（评分）或 annotation_config（单选/多选/文本/排序）",
                         },
                         "tasks": {
                             "type": "array",

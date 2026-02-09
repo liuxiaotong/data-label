@@ -1,0 +1,33 @@
+{
+  "project_name": "LLM 回答质量评估",
+  "description": "评估大语言模型生成回答的质量",
+  "fields": [
+    {
+      "name": "instruction",
+      "display_name": "用户指令",
+      "type": "text"
+    },
+    {
+      "name": "response",
+      "display_name": "模型回答",
+      "type": "text"
+    }
+  ],
+  "scoring_rubric": [
+    {
+      "score": 1,
+      "label": "优秀",
+      "description": "回答完整准确，逻辑清晰，表达流畅"
+    },
+    {
+      "score": 0.5,
+      "label": "一般",
+      "description": "回答基本正确但有遗漏或表达不够清晰"
+    },
+    {
+      "score": 0,
+      "label": "差",
+      "description": "回答错误、离题或无实质内容"
+    }
+  ]
+}

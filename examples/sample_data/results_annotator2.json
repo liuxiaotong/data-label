@@ -1,0 +1,13 @@
+{
+  "metadata": {
+    "annotator": "annotator_2",
+    "exported_at": "2025-01-15T11:00:00"
+  },
+  "responses": [
+    {"task_id": "TASK_001", "score": 1, "comment": ""},
+    {"task_id": "TASK_002", "score": 0.5, "comment": "缺少具体例子"},
+    {"task_id": "TASK_003", "score": 0.5, "comment": "对比不够全面"},
+    {"task_id": "TASK_004", "score": 0.5, "comment": "比较笼统"},
+    {"task_id": "TASK_005", "score": 1, "comment": ""}
+  ]
+}

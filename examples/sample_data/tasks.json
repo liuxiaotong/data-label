@@ -1,0 +1,37 @@
+[
+  {
+    "id": "TASK_001",
+    "data": {
+      "instruction": "什么是机器学习？",
+      "response": "机器学习是人工智能的一个分支，它使计算机系统能够从数据中学习并改进性能，而无需明确编程。通过训练算法识别数据中的模式，机器学习模型可以做出预测或决策。"
+    }
+  },
+  {
+    "id": "TASK_002",
+    "data": {
+      "instruction": "解释什么是深度学习",
+      "response": "深度学习是机器学习的一个子集，使用多层神经网络来学习数据的层次化表示。它在图像识别、自然语言处理等领域取得了突破性进展。"
+    }
+  },
+  {
+    "id": "TASK_003",
+    "data": {
+      "instruction": "Python 和 Java 的主要区别是什么？",
+      "response": "Python 是动态类型、解释型语言，语法简洁；Java 是静态类型、编译型语言，性能更好。Python 适合快速开发和数据科学，Java 适合大型企业应用。"
+    }
+  },
+  {
+    "id": "TASK_004",
+    "data": {
+      "instruction": "如何提高代码质量？",
+      "response": "可以通过代码审查、编写单元测试、遵循编码规范、使用静态分析工具、持续重构和文档化来提高代码质量。"
+    }
+  },
+  {
+    "id": "TASK_005",
+    "data": {
+      "instruction": "什么是 RESTful API？",
+      "response": "RESTful API 是一种基于 REST 架构风格的 Web API 设计方式，使用 HTTP 方法（GET、POST、PUT、DELETE）来操作资源，具有无状态、统一接口等特点。"
+    }
+  }
+]
