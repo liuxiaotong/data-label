@@ -126,7 +126,7 @@ class ResultMerger:
                     "conflict_count": len(conflicts),
                     "source_files": result_files,
                     "tool": "DataLabel",
-                    "version": "0.1.0",
+                    "version": "0.2.0",
                 },
                 "responses": merged_responses,
                 "conflicts": conflicts,
