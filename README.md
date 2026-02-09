@@ -6,6 +6,8 @@
 **Lightweight, serverless HTML labeling tool for offline annotation teams**
 
 [![PyPI](https://img.shields.io/pypi/v/knowlyr-datalabel?color=blue)](https://pypi.org/project/knowlyr-datalabel/)
+[![CI](https://github.com/liuxiaotong/data-label/actions/workflows/ci.yml/badge.svg)](https://github.com/liuxiaotong/data-label/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/liuxiaotong/data-label/graph/badge.svg)](https://codecov.io/gh/liuxiaotong/data-label)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![MCP](https://img.shields.io/badge/MCP-11_Tools%20·%206_Resources%20·%203_Prompts-purple.svg)](#mcp-server)
@@ -20,7 +22,7 @@
 
 **GitHub Topics**: `data-labeling`, `annotation`, `offline-first`, `mcp`, `ai-data-pipeline`
 
-生成独立的 HTML 标注界面，无需部署服务器，浏览器直接打开即可使用。支持 5 种标注类型、暗黑模式、撤销、统计面板、多格式导入导出，以及多标注员结果合并与一致性分析。内置 LLM 分析能力（Kimi/Moonshot、OpenAI、Anthropic），支持自动预标注、标注质量审核、标注指南生成。
+生成独立的 HTML 标注界面，无需部署服务器，浏览器直接打开即可使用。支持 5 种标注类型、暗黑模式、撤销、统计面板、多格式导入导出，以及多标注员结果合并与一致性分析。内置 LLM 分析能力（Kimi/Moonshot、OpenAI、Anthropic），支持自动预标注、标注质量审核、标注指南生成。可从标注结果一键生成进度仪表盘（完成率、分布图、一致性热力图、分歧表）。
 
 ## 核心能力
 
@@ -692,6 +694,7 @@ src/datalabel/
 ├── dashboard.py          # 标注进度仪表盘生成器
 ├── merger.py             # 标注结果合并 & IAA (Cohen's/Fleiss' Kappa, Krippendorff's Alpha)
 ├── validator.py          # Schema & 任务数据校验
+├── io.py                 # 导入导出核心逻辑 (JSON/JSONL/CSV)
 ├── cli.py                # CLI 命令行工具 (11 命令)
 ├── mcp_server/           # MCP Server (11 工具, 6 资源, 3 Prompts)
 │   ├── __init__.py       # 包入口
