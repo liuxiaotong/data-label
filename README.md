@@ -650,7 +650,7 @@ src/datalabel/
     ├── quality.py        # 标注质量分析
     └── guidelines.py     # 标注指南生成
 
-tests/                    # 188 个测试
+tests/                    # 232 个测试
 examples/                 # 可运行示例脚本 + 示例数据
 Dockerfile                # Docker 容器化支持
 ```
