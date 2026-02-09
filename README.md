@@ -18,6 +18,8 @@
 
 ---
 
+**GitHub Topics**: `data-labeling`, `annotation`, `offline-first`, `mcp`, `ai-data-pipeline`
+
 生成独立的 HTML 标注界面，无需部署服务器，浏览器直接打开即可使用。支持 5 种标注类型、暗黑模式、撤销、统计面板、多格式导入导出，以及多标注员结果合并与一致性分析。内置 LLM 分析能力（Kimi/Moonshot、OpenAI、Anthropic），支持自动预标注、标注质量审核、标注指南生成。
 
 ## 核心能力
