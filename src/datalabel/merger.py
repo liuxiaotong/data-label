@@ -140,7 +140,7 @@ class ResultMerger:
 
             result.output_path = str(output_path)
 
-        except Exception as e:
+        except (OSError, ValueError, KeyError, json.JSONDecodeError) as e:
             result.success = False
             result.error = str(e)
 

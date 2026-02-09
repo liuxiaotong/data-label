@@ -27,18 +27,18 @@ classifiers = [
 ]
 
 dependencies = [
-    "click>=8.0",
-    "jinja2>=3.0",
-    "markdown>=3.0",
+    "click>=8.0,<9.0",
+    "jinja2>=3.0,<4.0",
+    "markdown>=3.0,<4.0",
 ]
 
 [project.optional-dependencies]
-mcp = ["mcp>=1.0"]
-openai = ["openai>=1.0"]
-anthropic = ["anthropic>=0.18"]
+mcp = ["mcp>=1.0,<2.0"]
+openai = ["openai>=1.0,<3.0"]
+anthropic = ["anthropic>=0.18,<1.0"]
 llm = ["knowlyr-datalabel[openai]"]
 llm-all = ["knowlyr-datalabel[openai,anthropic]"]
-dev = ["pytest", "ruff"]
+dev = ["pytest", "pytest-cov", "ruff"]
 all = ["knowlyr-datalabel[mcp,llm-all,dev]"]
 
 [project.scripts]
