@@ -636,16 +636,16 @@ DataLabel 是 Data Pipeline 生态的标注组件：
 
 ```mermaid
 graph LR
-    Radar["Radar<br/>情报发现"] --> Recipe["Recipe<br/>逆向分析"]
-    Recipe --> Synth["Synth<br/>数据合成"]
-    Recipe --> Label["Label<br/>数据标注"]
-    Synth --> Check["Check<br/>数据质检"]
+    Radar["🔍 Radar<br/>情报发现"] --> Recipe["📋 Recipe<br/>逆向分析"]
+    Recipe --> Synth["🔄 Synth<br/>数据合成"]
+    Recipe --> Label["🏷️ Label<br/>数据标注"]
+    Synth --> Check["✅ Check<br/>数据质检"]
     Label --> Check
-    Check --> Audit["Audit<br/>模型审计"]
-    Audit --> Hub["Hub<br/>编排层"]
-    Hub --> Sandbox["Sandbox<br/>执行沙箱"]
-    Sandbox --> Recorder["Recorder<br/>轨迹录制"]
-    Recorder --> Reward["Reward<br/>过程打分"]
+    Check --> Audit["🔬 Audit<br/>模型审计"]
+    Audit --> Hub["🎯 Hub<br/>编排层"]
+    Hub --> Sandbox["📦 Sandbox<br/>执行沙箱"]
+    Sandbox --> Recorder["📹 Recorder<br/>轨迹录制"]
+    Recorder --> Reward["⭐ Reward<br/>过程打分"]
     style Label fill:#0969da,color:#fff,stroke:#0969da
 ```
 
