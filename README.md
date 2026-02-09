@@ -8,7 +8,7 @@
 [![PyPI](https://img.shields.io/pypi/v/knowlyr-datalabel?color=blue)](https://pypi.org/project/knowlyr-datalabel/)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![MCP](https://img.shields.io/badge/MCP-7_Tools-purple.svg)](#mcp-server)
+[![MCP](https://img.shields.io/badge/MCP-10_Tools%20·%206_Resources%20·%203_Prompts-purple.svg)](#mcp-server)
 [![LLM](https://img.shields.io/badge/LLM-Kimi%20%7C%20OpenAI%20%7C%20Anthropic-orange.svg)](#llm-分析)
 [![Docker](https://img.shields.io/badge/Docker-ready-2496ED.svg)](#docker)
 
@@ -47,7 +47,7 @@
 | **LLM 自动预标注** | 使用 Kimi/OpenAI/Anthropic 自动预标注，加速标注流程 |
 | **LLM 质量分析** | 检测可疑标注、分析多标注员分歧 |
 | **LLM 指南生成** | 根据 Schema 和样例自动生成标注指南 |
-| **MCP 支持** | 可作为 Claude Desktop / Claude Code 的工具使用 (7 工具) |
+| **MCP 支持** | 10 工具 + 6 资源 + 3 Prompt 模板，可作为 Claude Desktop / Claude Code 的工具使用 |
 | **Docker** | 容器化运行，无需安装 Python 环境 |
 
 ### 工作流
@@ -420,7 +420,7 @@ docker run --rm -v $(pwd):/data knowlyr-datalabel \
 
 ## MCP Server
 
-在 Claude Desktop / Claude Code 中直接使用 DataLabel 功能。
+在 Claude Desktop / Claude Code 中直接使用 DataLabel 功能。提供 **10 个工具**、**6 个资源** 和 **3 个 Prompt 模板**。
 
 ### 配置
 
@@ -437,7 +437,7 @@ docker run --rm -v $(pwd):/data knowlyr-datalabel \
 }
 ```
 
-### 可用工具
+### Tools (10)
 
 | 工具 | 功能 |
 |------|------|
@@ -445,9 +445,31 @@ docker run --rm -v $(pwd):/data knowlyr-datalabel \
 | `create_annotator` | 从 Schema 和任务创建标注界面 (支持 5 种标注类型) |
 | `merge_annotations` | 合并多个标注结果 |
 | `calculate_iaa` | 计算标注员间一致性 (Cohen's/Fleiss' Kappa, Krippendorff's Alpha) |
+| `validate_schema` | 验证 Schema 和任务数据格式 |
+| `export_results` | 将标注结果导出为 JSON/JSONL/CSV |
+| `import_tasks` | 从 JSON/JSONL/CSV 导入任务数据 |
 | `llm_prelabel` | 使用 LLM 自动预标注任务数据 |
 | `llm_quality_analysis` | 使用 LLM 分析标注质量和分歧 |
 | `llm_gen_guidelines` | 使用 LLM 生成标注指南 |
+
+### Resources (6)
+
+| URI | 说明 |
+|-----|------|
+| `datalabel://schemas/scoring` | 评分标注 Schema 模板 |
+| `datalabel://schemas/single_choice` | 单选标注 Schema 模板 |
+| `datalabel://schemas/multi_choice` | 多选标注 Schema 模板 |
+| `datalabel://schemas/text` | 文本标注 Schema 模板 |
+| `datalabel://schemas/ranking` | 排序标注 Schema 模板 |
+| `datalabel://reference/annotation-types` | 全部标注类型说明及用途 |
+
+### Prompts (3)
+
+| Prompt | 说明 |
+|--------|------|
+| `create-annotation-schema` | 根据任务描述引导生成合法 Schema |
+| `review-annotations` | 分析标注结果质量和一致性 |
+| `annotation-workflow` | 完整标注工作流引导（Schema → 标注 → 合并） |
 
 ---
 
@@ -612,7 +634,12 @@ src/datalabel/
 ├── merger.py             # 标注结果合并 & IAA (Cohen's/Fleiss' Kappa, Krippendorff's Alpha)
 ├── validator.py          # Schema & 任务数据校验
 ├── cli.py                # CLI 命令行工具 (10 命令)
-├── mcp_server.py         # MCP Server (7 工具)
+├── mcp_server/           # MCP Server (10 工具, 6 资源, 3 Prompts)
+│   ├── __init__.py       # 包入口
+│   ├── _server.py        # 服务器创建与启动
+│   ├── _tools.py         # 工具定义与处理函数
+│   ├── _resources.py     # 资源定义 (Schema 模板)
+│   └── _prompts.py       # Prompt 模板定义
 ├── templates/
 │   └── annotator.html    # Jinja2 HTML 模板 (暗黑模式, 统计面板, 撤销, 快捷键)
 └── llm/                  # LLM 分析模块
@@ -623,7 +650,7 @@ src/datalabel/
     ├── quality.py        # 标注质量分析
     └── guidelines.py     # 标注指南生成
 
-tests/                    # 130 个测试
+tests/                    # 188 个测试
 examples/                 # 可运行示例脚本 + 示例数据
 Dockerfile                # Docker 容器化支持
 ```
