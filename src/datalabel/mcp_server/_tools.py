@@ -5,12 +5,14 @@ from typing import Any
 
 from mcp.types import TextContent, Tool
 
+from datalabel.dashboard import DashboardGenerator
 from datalabel.generator import AnnotatorGenerator
 from datalabel.io import export_responses, extract_responses, import_tasks_from_file
 from datalabel.merger import ResultMerger
 from datalabel.validator import SchemaValidator
 
 # 共享实例
+_dashboard = DashboardGenerator()
 _generator = AnnotatorGenerator()
 _merger = ResultMerger()
 _validator = SchemaValidator()
@@ -169,6 +171,29 @@ TOOLS = [
                 },
             },
             "required": ["input_file", "output_path"],
+        },
+    ),
+    Tool(
+        name="generate_dashboard",
+        description="从标注结果文件生成标注进度仪表盘 HTML",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "result_files": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "标注结果 JSON 文件路径列表",
+                },
+                "output_path": {
+                    "type": "string",
+                    "description": "输出 HTML 文件路径",
+                },
+                "title": {
+                    "type": "string",
+                    "description": "仪表盘标题（可选）",
+                },
+            },
+            "required": ["result_files", "output_path"],
         },
     ),
     Tool(
@@ -445,6 +470,29 @@ def handle_import_tasks(arguments: dict[str, Any]) -> list[TextContent]:
     ]
 
 
+def handle_generate_dashboard(arguments: dict[str, Any]) -> list[TextContent]:
+    """处理 generate_dashboard 工具调用."""
+    result = _dashboard.generate(
+        result_files=arguments["result_files"],
+        output_path=arguments["output_path"],
+        title=arguments.get("title"),
+    )
+    if result.success:
+        return [
+            TextContent(
+                type="text",
+                text=(
+                    f"仪表盘已生成:\n"
+                    f"- 输出路径: {result.output_path}\n"
+                    f"- 标注员数: {result.annotator_count}\n"
+                    f"- 总任务数: {result.total_tasks}\n"
+                    f"- 平均完成率: {result.overall_completion:.1%}"
+                ),
+            )
+        ]
+    return [TextContent(type="text", text=f"仪表盘生成失败: {result.error}")]
+
+
 def handle_llm_prelabel(arguments: dict[str, Any]) -> list[TextContent]:
     """处理 llm_prelabel 工具调用."""
     from datalabel.llm import LLMClient, LLMConfig, PreLabeler
@@ -546,6 +594,7 @@ TOOL_HANDLERS: dict[str, Any] = {
     "validate_schema": handle_validate_schema,
     "export_results": handle_export_results,
     "import_tasks": handle_import_tasks,
+    "generate_dashboard": handle_generate_dashboard,
     "llm_prelabel": handle_llm_prelabel,
     "llm_quality_analysis": handle_llm_quality_analysis,
     "llm_gen_guidelines": handle_llm_gen_guidelines,

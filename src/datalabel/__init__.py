@@ -5,8 +5,15 @@
 
 __version__ = "0.2.1"
 
+from datalabel.dashboard import DashboardGenerator
 from datalabel.generator import AnnotatorGenerator
 from datalabel.merger import ResultMerger
 from datalabel.validator import SchemaValidator
 
-__all__ = ["AnnotatorGenerator", "ResultMerger", "SchemaValidator", "__version__"]
+__all__ = [
+    "AnnotatorGenerator",
+    "DashboardGenerator",
+    "ResultMerger",
+    "SchemaValidator",
+    "__version__",
+]

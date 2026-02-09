@@ -8,6 +8,7 @@ from typing import Optional
 import click
 
 from datalabel import __version__
+from datalabel.dashboard import DashboardGenerator
 from datalabel.generator import AnnotatorGenerator
 from datalabel.io import export_responses, extract_responses, import_tasks_from_file
 from datalabel.merger import ResultMerger
@@ -259,6 +260,48 @@ def validate(schema_file: str, tasks_file: Optional[str]):
         if task_result.errors or result.errors:
             sys.exit(1)
     elif result.errors:
+        sys.exit(1)
+
+
+@main.command()
+@click.argument("result_files", nargs=-1, type=click.Path(exists=True), required=True)
+@click.option("-o", "--output", type=click.Path(), required=True, help="输出 HTML 文件路径")
+@click.option(
+    "-s", "--schema", "schema_file", type=click.Path(exists=True), help="Schema JSON 文件（可选）"
+)
+@click.option("-t", "--title", type=str, help="仪表盘标题")
+def dashboard(result_files: tuple, output: str, schema_file: Optional[str], title: Optional[str]):
+    """生成标注进度仪表盘
+
+    RESULT_FILES: 标注结果 JSON 文件列表
+    """
+    if len(result_files) < 1:
+        click.echo("错误: 至少需要 1 个标注结果文件", err=True)
+        sys.exit(1)
+
+    schema = None
+    if schema_file:
+        with open(schema_file, "r", encoding="utf-8") as f:
+            schema = json.load(f)
+
+    click.echo(f"正在生成仪表盘 ({len(result_files)} 个结果文件)...")
+
+    gen = DashboardGenerator()
+    result = gen.generate(
+        result_files=list(result_files),
+        output_path=output,
+        schema=schema,
+        title=title,
+    )
+
+    if result.success:
+        click.echo(f"✓ 仪表盘已生成: {result.output_path}")
+        click.echo(f"  标注员数: {result.annotator_count}")
+        click.echo(f"  总任务数: {result.total_tasks}")
+        click.echo(f"  平均完成率: {result.overall_completion:.1%}")
+        click.echo("\n在浏览器中打开此文件查看仪表盘")
+    else:
+        click.echo(f"✗ 生成失败: {result.error}", err=True)
         sys.exit(1)
 
 

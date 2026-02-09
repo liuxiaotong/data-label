@@ -30,7 +30,7 @@ class TestRegistrationCompleteness:
     """测试注册完整性."""
 
     def test_tool_definitions(self):
-        assert len(TOOLS) == 10
+        assert len(TOOLS) == 11
         names = {t.name for t in TOOLS}
         expected = {
             "generate_annotator",
@@ -40,6 +40,7 @@ class TestRegistrationCompleteness:
             "validate_schema",
             "export_results",
             "import_tasks",
+            "generate_dashboard",
             "llm_prelabel",
             "llm_quality_analysis",
             "llm_gen_guidelines",

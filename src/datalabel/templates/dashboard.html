@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="zh" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{ title }}</title>
+<style>
+:root {
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text: #333333;
+  --text-secondary: #666666;
+  --border: #e0e0e0;
+  --primary: #4a90d9;
+  --primary-light: #e8f0fe;
+  --success: #34a853;
+  --warning: #fbbc04;
+  --danger: #ea4335;
+  --bar-bg: #e8e8e8;
+  --shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+[data-theme="dark"] {
+  --bg: #1a1a2e;
+  --card-bg: #16213e;
+  --text: #e0e0e0;
+  --text-secondary: #a0a0a0;
+  --border: #2a2a4a;
+  --primary: #6db3f2;
+  --primary-light: #1a2744;
+  --success: #57d983;
+  --warning: #fdd663;
+  --danger: #f28b82;
+  --bar-bg: #2a2a4a;
+  --shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--bg); color: var(--text);
+  line-height: 1.6; padding: 1.5rem;
+}
+header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border);
+}
+header h1 { font-size: 1.5rem; font-weight: 600; }
+header .meta { font-size: 0.8rem; color: var(--text-secondary); }
+.theme-btn {
+  background: var(--card-bg); border: 1px solid var(--border); border-radius: 6px;
+  padding: 0.4rem 0.8rem; cursor: pointer; color: var(--text); font-size: 0.85rem;
+}
+.theme-btn:hover { background: var(--primary-light); }
+
+/* Overview Cards */
+.overview-cards {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem; margin-bottom: 2rem;
+}
+.card {
+  background: var(--card-bg); border-radius: 10px; padding: 1.2rem;
+  box-shadow: var(--shadow); text-align: center;
+}
+.card .value { font-size: 2rem; font-weight: 700; color: var(--primary); }
+.card .label { font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.3rem; }
+
+/* Sections */
+.section {
+  background: var(--card-bg); border-radius: 10px; padding: 1.5rem;
+  box-shadow: var(--shadow); margin-bottom: 1.5rem;
+}
+.section h2 { font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem; }
+
+/* Progress Bars */
+.progress-row {
+  display: flex; align-items: center; gap: 0.8rem; margin-bottom: 0.6rem;
+}
+.progress-row .name { width: 100px; font-size: 0.85rem; text-align: right; flex-shrink: 0; }
+.bar-container {
+  flex: 1; height: 22px; background: var(--bar-bg); border-radius: 11px; overflow: hidden;
+}
+.bar-fill {
+  height: 100%; background: var(--primary); border-radius: 11px;
+  transition: width 0.3s; min-width: 2px;
+}
+.progress-row .stats { font-size: 0.8rem; color: var(--text-secondary); width: 90px; flex-shrink: 0; }
+
+/* Distribution SVG */
+.dist-chart { overflow-x: auto; }
+.dist-chart svg { display: block; }
+.dist-chart rect.bar { fill: var(--primary); }
+.dist-chart rect.bar:hover { opacity: 0.8; }
+.dist-chart text { fill: var(--text); font-size: 11px; }
+.dist-chart text.count { font-size: 10px; fill: var(--text-secondary); }
+.no-chart { color: var(--text-secondary); font-style: italic; }
+
+/* Heatmap */
+.heatmap-grid {
+  display: inline-grid; gap: 2px; font-size: 0.8rem;
+}
+.heatmap-cell {
+  width: 60px; height: 40px; display: flex; align-items: center; justify-content: center;
+  border-radius: 4px; color: #fff; font-weight: 600; font-size: 0.75rem;
+}
+.heatmap-cell.header {
+  background: transparent; color: var(--text); font-weight: 600; font-size: 0.75rem;
+}
+.heatmap-cell.diagonal { background: var(--bar-bg); color: var(--text-secondary); }
+.heatmap-metrics { margin-top: 1rem; font-size: 0.85rem; color: var(--text-secondary); }
+.na-hint { color: var(--text-secondary); font-style: italic; }
+
+/* Conflict Table */
+.conflict-search {
+  width: 100%; padding: 0.5rem 0.8rem; margin-bottom: 0.8rem;
+  border: 1px solid var(--border); border-radius: 6px; font-size: 0.85rem;
+  background: var(--bg); color: var(--text);
+}
+.conflict-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+.conflict-table th, .conflict-table td {
+  padding: 0.5rem 0.6rem; border-bottom: 1px solid var(--border); text-align: left;
+}
+.conflict-table th { font-weight: 600; background: var(--bg); position: sticky; top: 0; }
+.conflict-table tr:hover td { background: var(--primary-light); }
+.conflict-wrapper { max-height: 400px; overflow-y: auto; }
+.conflict-badge {
+  display: inline-block; padding: 0.15rem 0.5rem; border-radius: 4px;
+  background: var(--danger); color: #fff; font-size: 0.75rem; font-weight: 600;
+}
+
+/* Time Chart */
+.time-chart { overflow-x: auto; }
+.time-chart svg { display: block; }
+.time-chart rect.bar { fill: var(--success); }
+.time-chart rect.bar:hover { opacity: 0.8; }
+.time-chart text { fill: var(--text); font-size: 10px; }
+
+/* Footer */
+footer {
+  text-align: center; padding: 1.5rem 0 0.5rem; font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>{{ title }}</h1>
+    <div class="meta">生成时间: {{ generated_at[:19] }}</div>
+  </div>
+  <button class="theme-btn" onclick="toggleTheme()">切换主题</button>
+</header>
+
+<!-- Section 1: Overview Cards -->
+<div class="overview-cards">
+  <div class="card">
+    <div class="value">{{ overview.total_tasks }}</div>
+    <div class="label">总任务数</div>
+  </div>
+  <div class="card">
+    <div class="value">{{ overview.annotator_count }}</div>
+    <div class="label">标注员数</div>
+  </div>
+  <div class="card">
+    <div class="value">{{ "%.1f"|format(overview.overall_completion * 100) }}%</div>
+    <div class="label">平均完成率</div>
+  </div>
+  <div class="card">
+    <div class="value">{{ "%.1f"|format(overview.agreement_rate * 100) }}%</div>
+    <div class="label">一致率</div>
+  </div>
+</div>
+
+<!-- Section 2: Per-Annotator Progress -->
+<div class="section">
+  <h2>标注员进度</h2>
+  {% for ann in per_annotator %}
+  <div class="progress-row">
+    <span class="name">{{ ann.name }}</span>
+    <div class="bar-container">
+      <div class="bar-fill" style="width: {{ ann.percentage }}%"></div>
+    </div>
+    <span class="stats">{{ ann.completed }}/{{ ann.total }} ({{ ann.percentage }}%)</span>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Section 3: Distribution Chart -->
+<div class="section">
+  <h2>标注值分布</h2>
+  {% if distribution.type == 'text' %}
+    <p class="no-chart">文本标注不支持分布图</p>
+  {% elif distribution.type == 'unknown' %}
+    <p class="no-chart">无标注数据</p>
+  {% elif dist_bars %}
+    <div class="dist-chart">
+      <svg width="{{ (dist_bars|length) * 50 + 20 }}" height="180" viewBox="0 0 {{ (dist_bars|length) * 50 + 20 }} 180">
+        {% for bar in dist_bars %}
+        <rect class="bar" x="{{ bar.x }}" y="{{ bar.y }}" width="{{ bar.width }}" height="{{ bar.height }}" rx="3">
+          <title>{{ bar.label }}: {{ bar.count }}</title>
+        </rect>
+        <text x="{{ bar.x + bar.width / 2 }}" y="175" text-anchor="middle">{{ bar.label }}</text>
+        <text class="count" x="{{ bar.x + bar.width / 2 }}" y="{{ bar.y - 4 }}" text-anchor="middle">{{ bar.count }}</text>
+        {% endfor %}
+      </svg>
+    </div>
+  {% else %}
+    <p class="no-chart">无数据</p>
+  {% endif %}
+</div>
+
+<!-- Section 4: Agreement Heatmap -->
+{% if heatmap.available and heatmap.matrix %}
+<div class="section">
+  <h2>标注员一致性 (Cohen's Kappa)</h2>
+  <div class="heatmap-grid" style="grid-template-columns: auto {% for _ in heatmap.annotators %}60px {% endfor %}">
+    <!-- Header row -->
+    <div class="heatmap-cell header"></div>
+    {% for ann in heatmap.annotators %}
+    <div class="heatmap-cell header">{{ ann[:6] }}</div>
+    {% endfor %}
+    <!-- Data rows -->
+    {% for i in range(heatmap.matrix|length) %}
+    <div class="heatmap-cell header">{{ heatmap.annotators[i][:6] }}</div>
+    {% for j in range(heatmap.matrix[i]|length) %}
+    {% if i == j %}
+    <div class="heatmap-cell diagonal">-</div>
+    {% else %}
+    <div class="heatmap-cell" style="background: {{ heatmap.matrix[i][j]|kappa_color }}">
+      {{ "%.2f"|format(heatmap.matrix[i][j]) }}
+    </div>
+    {% endif %}
+    {% endfor %}
+    {% endfor %}
+  </div>
+  <div class="heatmap-metrics">
+    {% if heatmap.fleiss_kappa is not none %}
+    Fleiss' Kappa: <strong>{{ "%.3f"|format(heatmap.fleiss_kappa) }}</strong>
+    {% endif %}
+    {% if heatmap.krippendorff_alpha is not none %}
+    &nbsp;|&nbsp; Krippendorff's Alpha: <strong>{{ "%.3f"|format(heatmap.krippendorff_alpha) }}</strong>
+    {% endif %}
+  </div>
+</div>
+{% elif overview.annotator_count < 2 %}
+<div class="section">
+  <h2>标注员一致性</h2>
+  <p class="na-hint">需要至少 2 位标注员才能计算一致性指标</p>
+</div>
+{% endif %}
+
+<!-- Section 5: Conflicts -->
+{% if conflicts %}
+<div class="section">
+  <h2>标注分歧 <span class="conflict-badge">{{ conflicts|length }}</span></h2>
+  <input class="conflict-search" type="text" placeholder="搜索 Task ID..." oninput="filterConflicts(this.value)">
+  <div class="conflict-wrapper">
+    <table class="conflict-table">
+      <thead>
+        <tr>
+          <th>Task ID</th>
+          {% for ann in per_annotator %}
+          <th>{{ ann.name }}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody id="conflictBody">
+        {% for c in conflicts %}
+        <tr>
+          <td><strong>{{ c.task_id }}</strong></td>
+          {% for ann in per_annotator %}
+          <td>{{ c.annotations.get(ann.name, '-') }}</td>
+          {% endfor %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+<!-- Section 6: Time Analysis -->
+{% if time_analysis.available %}
+<div class="section">
+  <h2>标注时间分布</h2>
+  <div class="time-chart">
+    <svg width="{{ time_analysis.chart_width }}" height="{{ time_analysis.chart_height + 20 }}"
+         viewBox="0 0 {{ time_analysis.chart_width }} {{ time_analysis.chart_height + 20 }}">
+      {% for bar in time_analysis.bars %}
+      <rect class="bar" x="{{ bar.x + 5 }}" y="{{ bar.y }}" width="{{ bar.width }}" height="{{ bar.height }}" rx="3">
+        <title>{{ bar.label }}: {{ bar.count }} 条</title>
+      </rect>
+      <text x="{{ bar.x + bar.width / 2 + 5 }}" y="{{ time_analysis.chart_height + 12 }}" text-anchor="middle" font-size="9">{{ bar.label }}</text>
+      {% endfor %}
+    </svg>
+  </div>
+</div>
+{% endif %}
+
+<footer>
+  DataLabel Dashboard &middot; 生成于 {{ generated_at[:19] }}
+</footer>
+
+<script>
+function toggleTheme() {
+  const html = document.documentElement;
+  html.setAttribute('data-theme', html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+}
+function filterConflicts(query) {
+  const rows = document.querySelectorAll('#conflictBody tr');
+  const q = query.toLowerCase();
+  rows.forEach(row => {
+    const tid = row.cells[0].textContent.toLowerCase();
+    row.style.display = tid.includes(q) ? '' : 'none';
+  });
+}
+</script>
+</body>
+</html>

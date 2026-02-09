@@ -453,6 +453,65 @@ class TestCreateEdgeCases:
             assert "创建失败" in result.output
 
 
+class TestDashboardCommand:
+    """Tests for dashboard command."""
+
+    def test_dashboard_success(
+        self, annotator1_results, annotator2_results, annotator_results_factory
+    ):
+        runner = CliRunner()
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            files = annotator_results_factory(
+                tmpdir, [annotator1_results, annotator2_results]
+            )
+            output_path = Path(tmpdir) / "dashboard.html"
+
+            result = runner.invoke(
+                main, ["dashboard", *files, "-o", str(output_path)]
+            )
+
+            assert result.exit_code == 0
+            assert "仪表盘已生成" in result.output
+            assert "标注员数: 2" in result.output
+            assert output_path.exists()
+
+    def test_dashboard_with_title(
+        self, annotator1_results, annotator2_results, annotator_results_factory
+    ):
+        runner = CliRunner()
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            files = annotator_results_factory(
+                tmpdir, [annotator1_results, annotator2_results]
+            )
+            output_path = Path(tmpdir) / "dashboard.html"
+
+            result = runner.invoke(
+                main,
+                ["dashboard", *files, "-o", str(output_path), "-t", "测试仪表盘"],
+            )
+
+            assert result.exit_code == 0
+            content = output_path.read_text(encoding="utf-8")
+            assert "测试仪表盘" in content
+
+    def test_dashboard_corrupted_file(self):
+        runner = CliRunner()
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            f1 = Path(tmpdir) / "bad.json"
+            f1.write_text("{invalid")
+            output_path = Path(tmpdir) / "dashboard.html"
+
+            result = runner.invoke(
+                main, ["dashboard", str(f1), "-o", str(output_path)]
+            )
+
+            assert result.exit_code == 1
+            assert "生成失败" in result.output
+
+
 class TestMergeIAAErrors:
     """Tests for merge/iaa error paths."""
 

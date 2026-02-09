@@ -10,6 +10,7 @@ from datalabel.mcp_server._tools import (
     handle_create_annotator,
     handle_export_results,
     handle_generate_annotator,
+    handle_generate_dashboard,
     handle_import_tasks,
     handle_merge_annotations,
     handle_validate_schema,
@@ -20,10 +21,10 @@ class TestToolDefinitions:
     """测试工具定义的完整性."""
 
     def test_tool_count(self):
-        assert len(TOOLS) == 10
+        assert len(TOOLS) == 11
 
     def test_handler_count(self):
-        assert len(TOOL_HANDLERS) == 10
+        assert len(TOOL_HANDLERS) == 11
 
     def test_all_tools_have_handlers(self):
         tool_names = {t.name for t in TOOLS}
@@ -323,6 +324,38 @@ class TestGenerateAnnotator:
         """无效目录 → line 302."""
         result = handle_generate_annotator({
             "analysis_dir": str(tmp_path),
+        })
+        assert "失败" in result[0].text
+
+
+class TestGenerateDashboard:
+    """测试 generate_dashboard handler."""
+
+    def test_success(
+        self,
+        annotator1_results,
+        annotator2_results,
+        annotator_results_factory,
+        tmp_path,
+    ):
+        files = annotator_results_factory(
+            tmp_path, [annotator1_results, annotator2_results]
+        )
+        output = str(tmp_path / "dashboard.html")
+        result = handle_generate_dashboard({
+            "result_files": files,
+            "output_path": output,
+        })
+        assert "仪表盘已生成" in result[0].text
+        assert Path(output).exists()
+
+    def test_failure(self, tmp_path):
+        f = tmp_path / "bad.json"
+        f.write_text("{bad", encoding="utf-8")
+        output = str(tmp_path / "dashboard.html")
+        result = handle_generate_dashboard({
+            "result_files": [str(f)],
+            "output_path": output,
         })
         assert "失败" in result[0].text
 
