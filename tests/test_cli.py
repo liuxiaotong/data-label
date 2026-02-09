@@ -239,3 +239,100 @@ class TestCLI:
             assert len(data) == 2
             assert data[0]["id"] == "T1"
             assert data[0]["text"] == "hello"
+
+
+class TestValidateCommand:
+    """Tests for validate command."""
+
+    def test_validate_schema_success(self, sample_schema):
+        """Test validate with a valid schema."""
+        runner = CliRunner()
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            schema_path = Path(tmpdir) / "schema.json"
+            schema_path.write_text(json.dumps(sample_schema, ensure_ascii=False))
+
+            result = runner.invoke(main, ["validate", str(schema_path)])
+
+            assert result.exit_code == 0
+            assert "验证通过" in result.output
+
+    def test_validate_schema_errors(self):
+        """Test validate with invalid schema (missing fields)."""
+        runner = CliRunner()
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            schema_path = Path(tmpdir) / "schema.json"
+            schema_path.write_text(json.dumps({"fields": "not_a_list"}, ensure_ascii=False))
+
+            result = runner.invoke(main, ["validate", str(schema_path)])
+
+            assert result.exit_code != 0
+            assert "验证失败" in result.output
+
+    def test_validate_schema_warnings(self):
+        """Test validate with schema that produces warnings."""
+        runner = CliRunner()
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Schema with fields but missing project_name -> warning
+            schema = {"fields": [{"name": "text", "type": "text"}]}
+            schema_path = Path(tmpdir) / "schema.json"
+            schema_path.write_text(json.dumps(schema, ensure_ascii=False))
+
+            result = runner.invoke(main, ["validate", str(schema_path)])
+
+            assert result.exit_code == 0
+            assert "警告" in result.output
+
+    def test_validate_with_tasks_success(self, sample_schema, sample_tasks):
+        """Test validate with valid schema and tasks."""
+        runner = CliRunner()
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            schema_path = Path(tmpdir) / "schema.json"
+            tasks_path = Path(tmpdir) / "tasks.json"
+            schema_path.write_text(json.dumps(sample_schema, ensure_ascii=False))
+            tasks_path.write_text(json.dumps(sample_tasks, ensure_ascii=False))
+
+            result = runner.invoke(
+                main, ["validate", str(schema_path), "-t", str(tasks_path)]
+            )
+
+            assert result.exit_code == 0
+            assert "任务数据验证通过" in result.output
+
+    def test_validate_with_tasks_errors(self, sample_schema):
+        """Test validate with invalid tasks (non-dict item)."""
+        runner = CliRunner()
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            schema_path = Path(tmpdir) / "schema.json"
+            tasks_path = Path(tmpdir) / "tasks.json"
+            schema_path.write_text(json.dumps(sample_schema, ensure_ascii=False))
+            tasks_path.write_text(json.dumps(["not_a_dict"], ensure_ascii=False))
+
+            result = runner.invoke(
+                main, ["validate", str(schema_path), "-t", str(tasks_path)]
+            )
+
+            assert result.exit_code != 0
+
+    def test_validate_with_tasks_wrapped(self, sample_schema, sample_tasks):
+        """Test validate with tasks wrapped in {"samples": [...]}."""
+        runner = CliRunner()
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            schema_path = Path(tmpdir) / "schema.json"
+            tasks_path = Path(tmpdir) / "tasks.json"
+            schema_path.write_text(json.dumps(sample_schema, ensure_ascii=False))
+            tasks_path.write_text(
+                json.dumps({"samples": sample_tasks}, ensure_ascii=False)
+            )
+
+            result = runner.invoke(
+                main, ["validate", str(schema_path), "-t", str(tasks_path)]
+            )
+
+            assert result.exit_code == 0
+            assert "任务数据验证通过" in result.output

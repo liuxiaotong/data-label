@@ -381,3 +381,39 @@ class TestResultMerger:
             r = merged["responses"][0]
             assert "individual_texts" in r
             assert len(r["individual_texts"]) == 2
+
+
+class TestIAAEdgeCases:
+    """Tests for IAA metric edge cases."""
+
+    def test_cohens_kappa_empty(self):
+        """Empty ratings list returns 0.0."""
+        assert ResultMerger._cohens_kappa([], []) == 0.0
+
+    def test_cohens_kappa_single_category(self):
+        """All same category -> p_e >= 1.0, returns 1.0."""
+        assert ResultMerger._cohens_kappa(["a", "a", "a"], ["a", "a", "a"]) == 1.0
+
+    def test_fleiss_kappa_empty(self):
+        """Empty values list returns 0.0."""
+        assert ResultMerger._fleiss_kappa([]) == 0.0
+
+    def test_fleiss_kappa_single_rater(self):
+        """Single rater (n_raters < 2) returns 0.0."""
+        assert ResultMerger._fleiss_kappa([["a"], ["b"], ["a"]]) == 0.0
+
+    def test_fleiss_kappa_perfect_expected(self):
+        """All same category across all raters -> p_e_bar >= 1.0, returns 1.0."""
+        assert ResultMerger._fleiss_kappa([["a", "a"], ["a", "a"], ["a", "a"]]) == 1.0
+
+    def test_krippendorff_alpha_empty(self):
+        """Empty values list returns 0.0."""
+        assert ResultMerger._krippendorff_alpha([]) == 0.0
+
+    def test_krippendorff_alpha_single_rater(self):
+        """Single rater (n_raters < 2) returns 0.0."""
+        assert ResultMerger._krippendorff_alpha([["a"], ["b"]]) == 0.0
+
+    def test_krippendorff_alpha_uniform(self):
+        """All same category -> d_e == 0.0, returns 1.0."""
+        assert ResultMerger._krippendorff_alpha([["a", "a"], ["a", "a"]]) == 1.0

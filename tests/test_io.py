@@ -139,6 +139,14 @@ class TestImportTasksFromFile:
         tasks = import_tasks_from_file(path, fmt="jsonl")
         assert len(tasks) == 1
 
+    def test_import_csv_malformed_json_fallback(self, tmp_path):
+        """CSV value starting with { but not valid JSON keeps raw string."""
+        path = tmp_path / "tasks.csv"
+        path.write_text("id,data\nT1,{invalid json}\n", encoding="utf-8")
+        tasks = import_tasks_from_file(path)
+        assert len(tasks) == 1
+        assert tasks[0]["data"] == "{invalid json}"
+
     def test_invalid_format(self, tmp_path):
         path = tmp_path / "data.txt"
         path.write_text("", encoding="utf-8")
