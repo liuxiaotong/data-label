@@ -692,5 +692,5 @@ knowlyr-datacheck validate ./output/tencent_CL-bench/
 ---
 
 <div align="center">
-<sub>为数据标注团队提供轻量级、零部署的标注解决方案 · LLM 驱动的智能标注分析</sub>
+<sub><a href="https://github.com/liuxiaotong">knowlyr</a> 数据工程生态 · 轻量级零部署标注</sub>
 </div>
