@@ -130,8 +130,11 @@ class AnnotatorGenerator:
         if not schema_path.exists():
             return GeneratorResult(success=False, error=f"Schema not found: {schema_path}")
 
-        with open(schema_path, "r", encoding="utf-8") as f:
-            schema = json.load(f)
+        try:
+            with open(schema_path, "r", encoding="utf-8") as f:
+                schema = json.load(f)
+        except (json.JSONDecodeError, OSError) as e:
+            return GeneratorResult(success=False, error=f"Schema 读取失败: {e}")
 
         # Load samples/tasks
         samples_path = analysis_dir / "09_样例数据" / "samples.json"
@@ -140,9 +143,12 @@ class AnnotatorGenerator:
 
         tasks = []
         if samples_path.exists():
-            with open(samples_path, "r", encoding="utf-8") as f:
-                samples_data = json.load(f)
-                tasks = samples_data.get("samples", [])
+            try:
+                with open(samples_path, "r", encoding="utf-8") as f:
+                    samples_data = json.load(f)
+                    tasks = samples_data.get("samples", [])
+            except (json.JSONDecodeError, OSError) as e:
+                return GeneratorResult(success=False, error=f"任务数据读取失败: {e}")
 
         # Load guidelines
         guidelines = None

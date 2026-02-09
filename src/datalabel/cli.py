@@ -1,7 +1,5 @@
 """DataLabel CLI - 命令行界面."""
 
-import csv
-import io
 import json
 import sys
 from pathlib import Path
@@ -11,6 +9,7 @@ import click
 
 from datalabel import __version__
 from datalabel.generator import AnnotatorGenerator
+from datalabel.io import export_responses, extract_responses, import_tasks_from_file
 from datalabel.merger import ResultMerger
 
 
@@ -282,42 +281,13 @@ def export_results(result_file: str, output: str, fmt: str):
     with open(result_file, "r", encoding="utf-8") as f:
         data = json.load(f)
 
-    # Extract responses
-    if isinstance(data, list):
-        responses = data
-    elif isinstance(data, dict) and "responses" in data:
-        responses = data["responses"]
-    else:
+    responses = extract_responses(data)
+    if responses is None:
         click.echo("错误: 无法识别的结果文件格式", err=True)
         sys.exit(1)
 
-    output_path = Path(output)
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-
-    if fmt == "json":
-        with open(output_path, "w", encoding="utf-8") as f:
-            json.dump(responses, f, ensure_ascii=False, indent=2)
-    elif fmt == "jsonl":
-        with open(output_path, "w", encoding="utf-8") as f:
-            for r in responses:
-                f.write(json.dumps(r, ensure_ascii=False) + "\n")
-    elif fmt == "csv":
-        if not responses:
-            output_path.write_text("", encoding="utf-8")
-        else:
-            keys = list(dict.fromkeys(k for r in responses for k in r.keys()))
-            buf = io.StringIO()
-            writer = csv.DictWriter(buf, fieldnames=keys, extrasaction="ignore")
-            writer.writeheader()
-            for r in responses:
-                row = {}
-                for k in keys:
-                    v = r.get(k)
-                    row[k] = json.dumps(v, ensure_ascii=False) if isinstance(v, (list, dict)) else v
-                writer.writerow(row)
-            output_path.write_text(buf.getvalue(), encoding="utf-8")
-
-    click.echo(f"✓ 导出成功: {output_path} ({fmt}, {len(responses)} 条)")
+    count = export_responses(responses, output, fmt)
+    click.echo(f"✓ 导出成功: {output} ({fmt}, {count} 条)")
 
 
 @main.command(name="import-tasks")
@@ -336,51 +306,10 @@ def import_tasks(input_file: str, output: str, fmt: Optional[str]):
 
     INPUT_FILE: 输入文件路径 (JSON/JSONL/CSV)
     """
-    input_path = Path(input_file)
-
-    # Auto-detect format
-    if fmt is None:
-        suffix = input_path.suffix.lower()
-        if suffix == ".jsonl":
-            fmt = "jsonl"
-        elif suffix == ".csv":
-            fmt = "csv"
-        else:
-            fmt = "json"
-
-    tasks = []
-
-    if fmt == "json":
-        with open(input_path, "r", encoding="utf-8") as f:
-            data = json.load(f)
-        if isinstance(data, list):
-            tasks = data
-        elif isinstance(data, dict):
-            tasks = data.get("samples", data.get("tasks", []))
-    elif fmt == "jsonl":
-        with open(input_path, "r", encoding="utf-8") as f:
-            for line in f:
-                line = line.strip()
-                if line:
-                    tasks.append(json.loads(line))
-    elif fmt == "csv":
-        with open(input_path, "r", encoding="utf-8") as f:
-            reader = csv.DictReader(f)
-            for row in reader:
-                task = {}
-                for k, v in row.items():
-                    if v and v.startswith(("{", "[")):
-                        try:
-                            task[k] = json.loads(v)
-                        except json.JSONDecodeError:
-                            task[k] = v
-                    else:
-                        task[k] = v
-                tasks.append(task)
+    tasks = import_tasks_from_file(input_file, fmt)
 
     output_path = Path(output)
     output_path.parent.mkdir(parents=True, exist_ok=True)
-
     with open(output_path, "w", encoding="utf-8") as f:
         json.dump(tasks, f, ensure_ascii=False, indent=2)
 

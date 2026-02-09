@@ -1,14 +1,12 @@
 """MCP 工具定义与处理函数."""
 
-import csv
-import io
 import json
-from pathlib import Path
 from typing import Any
 
 from mcp.types import TextContent, Tool
 
 from datalabel.generator import AnnotatorGenerator
+from datalabel.io import export_responses, extract_responses, import_tasks_from_file
 from datalabel.merger import ResultMerger
 from datalabel.validator import SchemaValidator
 
@@ -405,103 +403,38 @@ def handle_validate_schema(arguments: dict[str, Any]) -> list[TextContent]:
 def handle_export_results(arguments: dict[str, Any]) -> list[TextContent]:
     """处理 export_results 工具调用."""
     result_file = arguments["result_file"]
-    output_path = Path(arguments["output_path"])
+    output_path = arguments["output_path"]
     fmt = arguments.get("format", "json")
 
     with open(result_file, "r", encoding="utf-8") as f:
         data = json.load(f)
 
-    if isinstance(data, list):
-        responses = data
-    elif isinstance(data, dict) and "responses" in data:
-        responses = data["responses"]
-    else:
+    responses = extract_responses(data)
+    if responses is None:
         return [TextContent(type="text", text="导出失败: 无法识别的结果文件格式")]
 
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-
-    if fmt == "json":
-        with open(output_path, "w", encoding="utf-8") as f:
-            json.dump(responses, f, ensure_ascii=False, indent=2)
-    elif fmt == "jsonl":
-        with open(output_path, "w", encoding="utf-8") as f:
-            for r in responses:
-                f.write(json.dumps(r, ensure_ascii=False) + "\n")
-    elif fmt == "csv":
-        if not responses:
-            output_path.write_text("", encoding="utf-8")
-        else:
-            keys = list(dict.fromkeys(k for r in responses for k in r.keys()))
-            buf = io.StringIO()
-            writer = csv.DictWriter(buf, fieldnames=keys, extrasaction="ignore")
-            writer.writeheader()
-            for r in responses:
-                row = {}
-                for k in keys:
-                    v = r.get(k)
-                    row[k] = (
-                        json.dumps(v, ensure_ascii=False)
-                        if isinstance(v, (list, dict))
-                        else v
-                    )
-                writer.writerow(row)
-            output_path.write_text(buf.getvalue(), encoding="utf-8")
-
+    count = export_responses(responses, output_path, fmt)
     return [
         TextContent(
             type="text",
-            text=f"导出成功: {output_path} ({fmt}, {len(responses)} 条)",
+            text=f"导出成功: {output_path} ({fmt}, {count} 条)",
         )
     ]
 
 
 def handle_import_tasks(arguments: dict[str, Any]) -> list[TextContent]:
     """处理 import_tasks 工具调用."""
-    input_path = Path(arguments["input_file"])
-    output_path = Path(arguments["output_path"])
+    input_file = arguments["input_file"]
+    output_path = arguments["output_path"]
     fmt = arguments.get("format")
 
-    if fmt is None:
-        suffix = input_path.suffix.lower()
-        if suffix == ".jsonl":
-            fmt = "jsonl"
-        elif suffix == ".csv":
-            fmt = "csv"
-        else:
-            fmt = "json"
+    tasks = import_tasks_from_file(input_file, fmt)
 
-    tasks: list[dict] = []
+    from pathlib import Path
 
-    if fmt == "json":
-        with open(input_path, "r", encoding="utf-8") as f:
-            data = json.load(f)
-        if isinstance(data, list):
-            tasks = data
-        elif isinstance(data, dict):
-            tasks = data.get("samples", data.get("tasks", []))
-    elif fmt == "jsonl":
-        with open(input_path, "r", encoding="utf-8") as f:
-            for line in f:
-                line = line.strip()
-                if line:
-                    tasks.append(json.loads(line))
-    elif fmt == "csv":
-        with open(input_path, "r", encoding="utf-8") as f:
-            reader = csv.DictReader(f)
-            for row in reader:
-                task: dict[str, Any] = {}
-                for k, v in row.items():
-                    if v and v.startswith(("{", "[")):
-                        try:
-                            task[k] = json.loads(v)
-                        except json.JSONDecodeError:
-                            task[k] = v
-                    else:
-                        task[k] = v
-                tasks.append(task)
-
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    with open(output_path, "w", encoding="utf-8") as f:
+    out = Path(output_path)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    with open(out, "w", encoding="utf-8") as f:
         json.dump(tasks, f, ensure_ascii=False, indent=2)
 
     return [

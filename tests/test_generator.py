@@ -1,5 +1,6 @@
 """Tests for AnnotatorGenerator."""
 
+import json
 import tempfile
 from pathlib import Path
 
@@ -365,3 +366,57 @@ class TestAnnotatorGenerator:
             content = output_path.read_text()
             assert "shortcutModal" in content
             assert "toggleShortcutModal" in content
+
+
+class TestGenerateFromDatarecipeErrors:
+    """generate_from_datarecipe 错误路径测试."""
+
+    def test_missing_schema_file(self):
+        generator = AnnotatorGenerator()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            result = generator.generate_from_datarecipe(tmpdir)
+            assert not result.success
+            assert "not found" in result.error.lower() or "Schema" in result.error
+
+    def test_corrupted_schema_json(self):
+        generator = AnnotatorGenerator()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            schema_path = Path(tmpdir) / "DATA_SCHEMA.json"
+            schema_path.write_text("{invalid json", encoding="utf-8")
+            result = generator.generate_from_datarecipe(tmpdir)
+            assert not result.success
+            assert "读取失败" in result.error
+
+    def test_corrupted_samples_json(self, sample_schema):
+        generator = AnnotatorGenerator()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Valid schema
+            schema_path = Path(tmpdir) / "DATA_SCHEMA.json"
+            schema_path.write_text(
+                json.dumps(sample_schema, ensure_ascii=False), encoding="utf-8"
+            )
+            # Corrupted samples
+            samples_dir = Path(tmpdir) / "09_样例数据"
+            samples_dir.mkdir()
+            (samples_dir / "samples.json").write_text(
+                "{bad json!", encoding="utf-8"
+            )
+            result = generator.generate_from_datarecipe(tmpdir)
+            assert not result.success
+            assert "读取失败" in result.error
+
+    def test_nonexistent_directory(self):
+        generator = AnnotatorGenerator()
+        result = generator.generate_from_datarecipe("/nonexistent/path")
+        assert not result.success
+
+    def test_valid_schema_no_samples(self, sample_schema):
+        generator = AnnotatorGenerator()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            schema_path = Path(tmpdir) / "DATA_SCHEMA.json"
+            schema_path.write_text(
+                json.dumps(sample_schema, ensure_ascii=False), encoding="utf-8"
+            )
+            result = generator.generate_from_datarecipe(tmpdir)
+            assert result.success
+            assert result.task_count == 0
