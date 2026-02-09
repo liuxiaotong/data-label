@@ -285,7 +285,7 @@ class TestAnnotatorGenerator:
 
             assert result.success
             content = output_path.read_text()
-            assert "PAGE_SIZE = 10" in content
+            assert "pageSize = 10" in content
             assert "task-sidebar" in content
             assert "sidebarSearch" in content
 

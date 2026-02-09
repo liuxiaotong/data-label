@@ -226,6 +226,53 @@
             color: white;
         }
 
+        .task-list-item.selected {
+            background: var(--primary);
+            color: white;
+            opacity: 0.85;
+        }
+
+        .task-list-item.selected::before {
+            content: '☑ ';
+            color: white;
+        }
+
+        .batch-bar {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            font-size: 0.8rem;
+        }
+
+        .batch-toggle {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+            cursor: pointer;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .batch-actions {
+            display: flex;
+            gap: 0.3rem;
+        }
+
+        .batch-action-btn {
+            padding: 0.2rem 0.5rem;
+            font-size: 0.7rem;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            background: var(--input-bg);
+            color: var(--text);
+            cursor: pointer;
+        }
+
+        .batch-action-btn:hover {
+            background: var(--gray-100);
+        }
+
         .sidebar-pagination {
             display: flex;
             align-items: center;
@@ -233,6 +280,7 @@
             gap: 0.5rem;
             font-size: 0.75rem;
             color: var(--gray-500);
+            flex-wrap: wrap;
         }
 
         .sidebar-pagination button {
@@ -833,6 +881,20 @@
                 <option value="completed">已完成</option>
                 <option value="pending">未完成</option>
             </select>
+            <select class="sidebar-filter" id="sidebarValueFilter" onchange="filterTaskList()" style="display:none">
+                <option value="">按标注值筛选</option>
+            </select>
+            <div class="batch-bar" id="batchBar">
+                <label class="batch-toggle">
+                    <input type="checkbox" id="batchMode" onchange="toggleBatchMode()"> 批量模式
+                </label>
+                <span id="batchCount" style="display:none;font-size:0.7rem;color:var(--primary)">已选 0</span>
+                <div class="batch-actions" id="batchActions" style="display:none">
+                    <button class="batch-action-btn" onclick="batchSelectAll()">全选</button>
+                    <button class="batch-action-btn" onclick="batchDeselectAll()">清除</button>
+                    <button class="batch-action-btn" onclick="batchExport()">导出选中</button>
+                </div>
+            </div>
             <div class="task-list-container" id="taskListContainer"></div>
             <div class="sidebar-pagination" id="sidebarPagination"></div>
         </div>
@@ -936,7 +998,7 @@
         const TOTAL_TASKS = {{ total_tasks }};
         const ANNOTATION_TYPE = '{{ annotation_type }}';
         const ANNOTATION_CONFIG = {{ annotation_config_json | safe }};
-        const PAGE_SIZE = {{ page_size }};
+        let pageSize = {{ page_size }};
 
         // State
         let currentIndex = 0;
@@ -944,6 +1006,8 @@
         let sidebarPage = 0;
         let filteredIndices = [...Array(TASKS.length).keys()];
         let undoHistory = {};  // taskId -> previous response (or null)
+        let batchMode = false;
+        let selectedTasks = new Set();
 
         // Load saved responses from localStorage
         const storageKey = 'datalabel_' + (SCHEMA.project_name || 'default').replace(/\s+/g, '_');
@@ -960,6 +1024,8 @@
         document.addEventListener('DOMContentLoaded', () => {
             initTheme();
             initAnnotationWidget();
+            initValueFilter();
+            initPageSizeSelect();
             renderTask(currentIndex);
             updateProgress();
             updateStats();
@@ -1500,6 +1566,7 @@
         function filterTaskList() {
             const query = (document.getElementById('sidebarSearch')?.value || '').toLowerCase();
             const filter = document.getElementById('sidebarFilter')?.value || 'all';
+            const valueFilter = document.getElementById('sidebarValueFilter')?.value || '';
 
             filteredIndices = [];
             for (let i = 0; i < TASKS.length; i++) {
@@ -1510,6 +1577,15 @@
                 // Filter by status
                 if (filter === 'completed' && !isComplete) continue;
                 if (filter === 'pending' && isComplete) continue;
+
+                // Filter by annotation value
+                if (valueFilter) {
+                    const resp = responses[taskId];
+                    if (!resp) continue;
+                    if (ANNOTATION_TYPE === 'scoring' && String(resp.score) !== valueFilter) continue;
+                    if (ANNOTATION_TYPE === 'single_choice' && resp.choice !== valueFilter) continue;
+                    if (ANNOTATION_TYPE === 'multi_choice' && !(resp.choices || []).includes(valueFilter)) continue;
+                }
 
                 // Filter by search query
                 if (query) {
@@ -1529,8 +1605,8 @@
             const container = document.getElementById('taskListContainer');
             if (!container) return;
 
-            const start = sidebarPage * PAGE_SIZE;
-            const end = Math.min(start + PAGE_SIZE, filteredIndices.length);
+            const start = sidebarPage * pageSize;
+            const end = Math.min(start + pageSize, filteredIndices.length);
             const pageIndices = filteredIndices.slice(start, end);
 
             container.innerHTML = '';
@@ -1539,14 +1615,21 @@
                 const taskId = task.id || `TASK_${String(i + 1).padStart(3, '0')}`;
                 const isComplete = !!responses[taskId];
                 const isCurrent = (i === currentIndex);
+                const isSelected = selectedTasks.has(taskId);
 
                 const item = document.createElement('div');
                 item.className = 'task-list-item';
                 if (isComplete) item.className += ' complete';
                 if (isCurrent) item.className += ' current';
+                if (batchMode && isSelected) item.className += ' selected';
                 item.textContent = taskId;
                 item.title = taskId;
-                item.onclick = () => { renderTask(i); renderTaskList(); };
+
+                if (batchMode) {
+                    item.onclick = () => { toggleTaskSelection(taskId); };
+                } else {
+                    item.onclick = () => { renderTask(i); renderTaskList(); };
+                }
                 container.appendChild(item);
             });
 
@@ -1557,9 +1640,14 @@
             const pag = document.getElementById('sidebarPagination');
             if (!pag) return;
 
-            const totalPages = Math.ceil(filteredIndices.length / PAGE_SIZE);
+            const totalPages = Math.ceil(filteredIndices.length / pageSize);
+            const pageSizeOptions = [25, 50, 100, 200].map(n =>
+                `<option value="${n}" ${n === pageSize ? 'selected' : ''}>${n}/页</option>`
+            ).join('');
+            const pageSizeSelect = `<select onchange="changePageSize(this.value)" style="padding:0.15rem 0.3rem;border:1px solid var(--gray-200);border-radius:4px;font-size:0.7rem;background:var(--input-bg);color:var(--text)">${pageSizeOptions}</select>`;
+
             if (totalPages <= 1) {
-                pag.innerHTML = `<span>${filteredIndices.length} 条</span>`;
+                pag.innerHTML = `<span>${filteredIndices.length} 条</span>${pageSizeSelect}`;
                 return;
             }
 
@@ -1567,6 +1655,7 @@
                 <button onclick="sidebarPrevPage()" ${sidebarPage === 0 ? 'disabled' : ''}>‹</button>
                 <span>${sidebarPage + 1} / ${totalPages}</span>
                 <button onclick="sidebarNextPage()" ${sidebarPage >= totalPages - 1 ? 'disabled' : ''}>›</button>
+                ${pageSizeSelect}
             `;
         }
 
@@ -1578,11 +1667,140 @@
         }
 
         function sidebarNextPage() {
-            const totalPages = Math.ceil(filteredIndices.length / PAGE_SIZE);
+            const totalPages = Math.ceil(filteredIndices.length / pageSize);
             if (sidebarPage < totalPages - 1) {
                 sidebarPage++;
                 renderTaskList();
             }
+        }
+
+        // ==================== Page Size ====================
+
+        function changePageSize(val) {
+            pageSize = parseInt(val);
+            sidebarPage = 0;
+            renderTaskList();
+        }
+
+        function initPageSizeSelect() {
+            // Page size select is rendered inside renderSidebarPagination()
+        }
+
+        // ==================== Value Filter ====================
+
+        function initValueFilter() {
+            const sel = document.getElementById('sidebarValueFilter');
+            if (!sel) return;
+
+            if (ANNOTATION_TYPE === 'scoring') {
+                const rubric = SCHEMA.scoring_rubric || [];
+                rubric.forEach(r => {
+                    const opt = document.createElement('option');
+                    opt.value = String(r.score);
+                    opt.textContent = `${r.label || r.description || ''} (${r.score})`;
+                    sel.appendChild(opt);
+                });
+                sel.style.display = '';
+            } else if (ANNOTATION_TYPE === 'single_choice' || ANNOTATION_TYPE === 'multi_choice') {
+                const options = (ANNOTATION_CONFIG && ANNOTATION_CONFIG.options) || [];
+                options.forEach(o => {
+                    const opt = document.createElement('option');
+                    opt.value = typeof o === 'string' ? o : o.value;
+                    opt.textContent = typeof o === 'string' ? o : (o.label || o.value);
+                    sel.appendChild(opt);
+                });
+                sel.style.display = '';
+            }
+            // text/ranking: keep hidden
+        }
+
+        // ==================== Batch Operations ====================
+
+        function toggleBatchMode() {
+            batchMode = document.getElementById('batchMode').checked;
+            document.getElementById('batchCount').style.display = batchMode ? '' : 'none';
+            document.getElementById('batchActions').style.display = batchMode ? 'flex' : 'none';
+            if (!batchMode) {
+                selectedTasks.clear();
+            }
+            updateBatchCount();
+            renderTaskList();
+        }
+
+        function toggleTaskSelection(taskId) {
+            if (selectedTasks.has(taskId)) {
+                selectedTasks.delete(taskId);
+            } else {
+                selectedTasks.add(taskId);
+            }
+            updateBatchCount();
+            renderTaskList();
+        }
+
+        function batchSelectAll() {
+            filteredIndices.forEach(i => {
+                const task = TASKS[i];
+                const taskId = task.id || `TASK_${String(i + 1).padStart(3, '0')}`;
+                selectedTasks.add(taskId);
+            });
+            updateBatchCount();
+            renderTaskList();
+        }
+
+        function batchDeselectAll() {
+            selectedTasks.clear();
+            updateBatchCount();
+            renderTaskList();
+        }
+
+        function updateBatchCount() {
+            const el = document.getElementById('batchCount');
+            if (el) el.textContent = `已选 ${selectedTasks.size}`;
+        }
+
+        function batchExport() {
+            if (selectedTasks.size === 0) {
+                showToast('未选择任何任务');
+                return;
+            }
+            const format = document.getElementById('exportFormat').value;
+            const resp = Object.values(responses).filter(r => selectedTasks.has(r.task_id));
+            const baseName = (SCHEMA.project_name || 'annotation').replace(/\s+/g, '_');
+            let content, mimeType, ext;
+
+            if (format === 'jsonl') {
+                content = resp.map(r => JSON.stringify(r)).join('\n');
+                mimeType = 'application/x-jsonlines';
+                ext = 'jsonl';
+            } else if (format === 'csv') {
+                content = exportAsCSV(resp);
+                mimeType = 'text/csv';
+                ext = 'csv';
+            } else {
+                content = JSON.stringify({
+                    schema: SCHEMA,
+                    metadata: {
+                        exported_at: new Date().toISOString(),
+                        total_tasks: TOTAL_TASKS,
+                        exported_tasks: resp.length,
+                        annotation_type: ANNOTATION_TYPE,
+                        tool: 'DataLabel',
+                        export_mode: 'batch_selected',
+                    },
+                    responses: resp,
+                }, null, 2);
+                mimeType = 'application/json';
+                ext = 'json';
+            }
+
+            const blob = new Blob([content], { type: mimeType + ';charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${baseName}_selected_${resp.length}.${ext}`;
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast(`已导出 ${resp.length} 条选中结果`);
         }
 
         // ==================== Theme ====================
