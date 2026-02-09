@@ -34,8 +34,12 @@ dependencies = [
 
 [project.optional-dependencies]
 mcp = ["mcp>=1.0"]
+openai = ["openai>=1.0"]
+anthropic = ["anthropic>=0.18"]
+llm = ["knowlyr-datalabel[openai]"]
+llm-all = ["knowlyr-datalabel[openai,anthropic]"]
 dev = ["pytest", "ruff"]
-all = ["knowlyr-datalabel[mcp,dev]"]
+all = ["knowlyr-datalabel[mcp,llm-all,dev]"]
 
 [project.scripts]
 knowlyr-datalabel = "datalabel.cli:main"

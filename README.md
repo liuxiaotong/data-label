@@ -8,21 +8,22 @@
 [![PyPI](https://img.shields.io/pypi/v/knowlyr-datalabel?color=blue)](https://pypi.org/project/knowlyr-datalabel/)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![MCP](https://img.shields.io/badge/MCP-4_Tools-purple.svg)](#mcp-server)
+[![MCP](https://img.shields.io/badge/MCP-7_Tools-purple.svg)](#mcp-server)
+[![LLM](https://img.shields.io/badge/LLM-Kimi%20%7C%20OpenAI%20%7C%20Anthropic-orange.svg)](#llm-分析)
 [![Docker](https://img.shields.io/badge/Docker-ready-2496ED.svg)](#docker)
 
-[快速开始](#快速开始) · [标注类型](#标注类型) · [结果合并](#结果合并) · [IAA 指标](#计算标注一致性-iaa) · [MCP Server](#mcp-server) · [Docker](#docker) · [生态](#data-pipeline-生态)
+[快速开始](#快速开始) · [标注类型](#标注类型) · [LLM 分析](#llm-分析) · [结果合并](#结果合并) · [IAA 指标](#计算标注一致性-iaa) · [MCP Server](#mcp-server) · [Docker](#docker) · [生态](#data-pipeline-生态)
 
 </div>
 
 ---
 
-生成独立的 HTML 标注界面，无需部署服务器，浏览器直接打开即可使用。支持 5 种标注类型、暗黑模式、撤销、统计面板、多格式导入导出，以及多标注员结果合并与一致性分析。
+生成独立的 HTML 标注界面，无需部署服务器，浏览器直接打开即可使用。支持 5 种标注类型、暗黑模式、撤销、统计面板、多格式导入导出，以及多标注员结果合并与一致性分析。内置 LLM 分析能力（Kimi/Moonshot、OpenAI、Anthropic），支持自动预标注、标注质量审核、标注指南生成。
 
 ## 核心能力
 
 ```
-数据 Schema + 任务列表 → 生成 HTML → 浏览器标注 → 导出结果 → 合并分析
+数据 Schema + 任务列表 → [LLM 预标注] → 生成 HTML → 浏览器标注 → 导出结果 → [LLM 质量分析] → 合并分析
 ```
 
 ### 特性一览
@@ -41,7 +42,10 @@
 | **多格式导入导出** | JSON / JSONL / CSV 三种格式 |
 | **Schema 校验** | 输入验证 + 友好的中文错误提示 |
 | **DataRecipe 集成** | 直接从 DataRecipe 分析结果生成标注界面 |
-| **MCP 支持** | 可作为 Claude Desktop / Claude Code 的工具使用 |
+| **LLM 自动预标注** | 使用 Kimi/OpenAI/Anthropic 自动预标注，加速标注流程 |
+| **LLM 质量分析** | 检测可疑标注、分析多标注员分歧 |
+| **LLM 指南生成** | 根据 Schema 和样例自动生成标注指南 |
+| **MCP 支持** | 可作为 Claude Desktop / Claude Code 的工具使用 (7 工具) |
 | **Docker** | 容器化运行，无需安装 Python 环境 |
 
 ### 工作流
@@ -63,6 +67,8 @@ pip install knowlyr-datalabel
 
 ```bash
 pip install knowlyr-datalabel[mcp]      # MCP 服务器
+pip install knowlyr-datalabel[llm]      # LLM 分析 (Kimi/OpenAI)
+pip install knowlyr-datalabel[llm-all]  # LLM 分析 (含 Anthropic)
 pip install knowlyr-datalabel[dev]      # 开发依赖 (pytest, ruff)
 pip install knowlyr-datalabel[all]      # 全部功能
 ```
@@ -192,6 +198,70 @@ DataLabel 支持 5 种标注类型，通过 Schema 中的 `annotation_config` �
   }
 }
 ```
+
+---
+
+## LLM 分析
+
+DataLabel 内置 LLM 分析能力，支持三个提供商：
+
+| 提供商 | 环境变量 | 默认模型 | SDK |
+|--------|----------|----------|-----|
+| **Moonshot (Kimi)** | `MOONSHOT_API_KEY` | moonshot-v1-8k | openai (兼容) |
+| **OpenAI** | `OPENAI_API_KEY` | gpt-4o-mini | openai |
+| **Anthropic** | `ANTHROPIC_API_KEY` | claude-sonnet-4-20250514 | anthropic |
+
+### 1. 自动预标注
+
+使用 LLM 对任务数据进行批量预标注，加速标注流程：
+
+```bash
+# 使用 Kimi 预标注（默认）
+export MOONSHOT_API_KEY=sk-...
+knowlyr-datalabel prelabel schema.json tasks.json -o prelabeled.json
+
+# 使用 OpenAI
+knowlyr-datalabel prelabel schema.json tasks.json -o prelabeled.json -p openai
+
+# 指定模型和批大小
+knowlyr-datalabel prelabel schema.json tasks.json -o prelabeled.json -p moonshot -m kimi-k2 --batch-size 10
+```
+
+预标注结果格式与人工标注完全一致，可直接用于标注界面的预填充。
+
+### 2. 标注质量分析
+
+使用 LLM 检测可疑标注，分析多标注员分歧：
+
+```bash
+# 单标注员质量检查
+knowlyr-datalabel quality schema.json results.json -o report.json -p moonshot
+
+# 多标注员分歧分析
+knowlyr-datalabel quality schema.json ann1.json ann2.json -o report.json
+```
+
+分析内容包括：
+- 与内容明显不匹配的标注
+- 标注模式异常（如全部相同分数）
+- 多标注员分歧原因和解决建议
+
+### 3. 标注指南生成
+
+根据 Schema 和样例数据自动生成标注指南文档：
+
+```bash
+# 生成中文指南
+knowlyr-datalabel gen-guidelines schema.json -t tasks.json -o guidelines.md
+
+# 生成英文指南
+knowlyr-datalabel gen-guidelines schema.json -t tasks.json -o guidelines.md -l en
+
+# 使用 OpenAI
+knowlyr-datalabel gen-guidelines schema.json -o guidelines.md -p openai
+```
+
+生成的指南包含：项目概述、字段说明、标注操作说明、评判标准、标注示例、边界情况、注意事项。
 
 ---
 
@@ -370,6 +440,9 @@ docker run --rm -v $(pwd):/data knowlyr-datalabel \
 | `create_annotator` | 从 Schema 和任务创建标注界面 (支持 5 种标注类型) |
 | `merge_annotations` | 合并多个标注结果 |
 | `calculate_iaa` | 计算标注员间一致性 (Cohen's/Fleiss' Kappa, Krippendorff's Alpha) |
+| `llm_prelabel` | 使用 LLM 自动预标注任务数据 |
+| `llm_quality_analysis` | 使用 LLM 分析标注质量和分歧 |
+| `llm_gen_guidelines` | 使用 LLM 生成标注指南 |
 
 ---
 
@@ -386,6 +459,10 @@ python examples/multi_type_annotation.py
 
 # DataRecipe 输出 → DataLabel 管道
 python examples/pipeline_datarecipe_to_label.py
+
+# LLM 分析工作流（预标注 + 质量分析 + 指南生成）
+export MOONSHOT_API_KEY=sk-...
+python examples/llm_workflow.py
 ```
 
 示例数据位于 `examples/sample_data/`：
@@ -415,6 +492,9 @@ python examples/pipeline_datarecipe_to_label.py
 | `knowlyr-datalabel validate <schema> [-t tasks]` | 验证 Schema/任务格式 |
 | `knowlyr-datalabel export <file> -o <out> -f json\|jsonl\|csv` | 导出格式转换 |
 | `knowlyr-datalabel import-tasks <file> -o <out> [-f format]` | 导入任务数据 |
+| `knowlyr-datalabel prelabel <schema> <tasks> -o <out> [-p provider]` | LLM 自动预标注 |
+| `knowlyr-datalabel quality <schema> <results...> [-o report]` | LLM 标注质量分析 |
+| `knowlyr-datalabel gen-guidelines <schema> -o <out> [-t tasks] [-l zh\|en]` | LLM 标注指南生成 |
 
 ---
 
@@ -479,6 +559,43 @@ if result.warnings:
     print("警告:", result.warnings)
 ```
 
+### LLM 自动预标注
+
+```python
+from datalabel.llm import LLMClient, LLMConfig, PreLabeler
+
+# 使用 Kimi/Moonshot
+client = LLMClient(provider="moonshot")
+labeler = PreLabeler(client=client)
+result = labeler.prelabel(schema=schema, tasks=tasks, output_path="prelabeled.json")
+
+print(f"标注数: {result.labeled_tasks}/{result.total_tasks}")
+print(f"Token: {result.total_usage.total_tokens}")
+```
+
+### LLM 质量分析
+
+```python
+from datalabel.llm import QualityAnalyzer, LLMClient
+
+client = LLMClient(provider="moonshot")
+analyzer = QualityAnalyzer(client=client)
+report = analyzer.analyze(schema=schema, result_files=["ann1.json", "ann2.json"])
+
+for issue in report.issues:
+    print(f"[{issue.severity}] {issue.task_id}: {issue.description}")
+```
+
+### LLM 标注指南生成
+
+```python
+from datalabel.llm import GuidelinesGenerator, LLMClient
+
+client = LLMClient(provider="moonshot")
+gen = GuidelinesGenerator(client=client)
+result = gen.generate(schema=schema, tasks=tasks, output_path="guidelines.md")
+```
+
 ---
 
 ## 项目架构
@@ -489,12 +606,19 @@ src/datalabel/
 ├── generator.py          # HTML 标注界面生成器
 ├── merger.py             # 标注结果合并 & IAA (Cohen's/Fleiss' Kappa, Krippendorff's Alpha)
 ├── validator.py          # Schema & 任务数据校验
-├── cli.py                # CLI 命令行工具 (8 命令)
-├── mcp_server.py         # MCP Server (4 工具)
-└── templates/
-    └── annotator.html    # Jinja2 HTML 模板 (暗黑模式, 统计面板, 撤销, 快捷键)
+├── cli.py                # CLI 命令行工具 (11 命令)
+├── mcp_server.py         # MCP Server (7 工具)
+├── templates/
+│   └── annotator.html    # Jinja2 HTML 模板 (暗黑模式, 统计面板, 撤销, 快捷键)
+└── llm/                  # LLM 分析模块
+    ├── __init__.py       # 统一导出
+    ├── client.py         # 多提供商 LLM 客户端 (Kimi/OpenAI/Anthropic)
+    ├── prompts.py        # Prompt 模板
+    ├── prelabel.py       # 自动预标注
+    ├── quality.py        # 标注质量分析
+    └── guidelines.py     # 标注指南生成
 
-tests/                    # 72 个测试
+tests/                    # 130 个测试
 examples/                 # 可运行示例脚本 + 示例数据
 Dockerfile                # Docker 容器化支持
 ```

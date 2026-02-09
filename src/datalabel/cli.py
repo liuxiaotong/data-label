@@ -387,5 +387,191 @@ def import_tasks(input_file: str, output: str, fmt: Optional[str]):
     click.echo(f"✓ 导入成功: {output_path} ({len(tasks)} 条)")
 
 
+# ============================================================
+# LLM 分析命令
+# ============================================================
+
+_PROVIDER_OPTION = click.option(
+    "-p",
+    "--provider",
+    type=click.Choice(["moonshot", "openai", "anthropic"]),
+    default="moonshot",
+    help="LLM 提供商 (默认: moonshot)",
+)
+_MODEL_OPTION = click.option(
+    "-m", "--model", type=str, default=None, help="模型名称 (默认: 提供商默认模型)"
+)
+
+
+def _load_tasks_file(tasks_file: str) -> list[dict]:
+    """从文件加载任务列表。"""
+    with open(tasks_file, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    if isinstance(data, list):
+        return data
+    return data.get("samples", data.get("tasks", []))
+
+
+@main.command()
+@click.argument("schema_file", type=click.Path(exists=True))
+@click.argument("tasks_file", type=click.Path(exists=True))
+@click.option("-o", "--output", type=click.Path(), required=True, help="输出文件路径")
+@_PROVIDER_OPTION
+@_MODEL_OPTION
+@click.option("--batch-size", type=int, default=5, help="每批处理任务数 (默认: 5)")
+def prelabel(
+    schema_file: str,
+    tasks_file: str,
+    output: str,
+    provider: str,
+    model: Optional[str],
+    batch_size: int,
+):
+    """使用 LLM 自动预标注
+
+    SCHEMA_FILE: 标注规范 JSON 文件
+    TASKS_FILE: 待标注任务 JSON 文件
+    """
+    from datalabel.llm import LLMClient, LLMConfig, PreLabeler
+
+    with open(schema_file, "r", encoding="utf-8") as f:
+        schema = json.load(f)
+    tasks = _load_tasks_file(tasks_file)
+
+    click.echo(f"正在使用 {provider} 进行自动预标注...")
+    click.echo(f"  任务数: {len(tasks)}, 批大小: {batch_size}")
+
+    config = LLMConfig(provider=provider, model=model)
+    client = LLMClient(config=config)
+    labeler = PreLabeler(client=client)
+
+    result = labeler.prelabel(schema=schema, tasks=tasks, output_path=output, batch_size=batch_size)
+
+    if result.success:
+        click.echo(f"✓ 预标注完成: {result.output_path}")
+        click.echo(f"  标注数: {result.labeled_tasks}/{result.total_tasks}")
+        click.echo(
+            f"  Token 用量: {result.total_usage.prompt_tokens} + "
+            f"{result.total_usage.completion_tokens} = {result.total_usage.total_tokens}"
+        )
+    else:
+        click.echo(f"✗ 预标注失败: {result.error}", err=True)
+        sys.exit(1)
+
+
+@main.command()
+@click.argument("schema_file", type=click.Path(exists=True))
+@click.argument("result_files", nargs=-1, type=click.Path(exists=True), required=True)
+@click.option("-o", "--output", type=click.Path(), help="报告输出路径 (JSON)")
+@_PROVIDER_OPTION
+@_MODEL_OPTION
+@click.option("--sample-size", type=int, default=20, help="每个标注员抽样数 (默认: 20)")
+def quality(
+    schema_file: str,
+    result_files: tuple,
+    output: Optional[str],
+    provider: str,
+    model: Optional[str],
+    sample_size: int,
+):
+    """使用 LLM 分析标注质量
+
+    SCHEMA_FILE: 标注规范 JSON 文件
+    RESULT_FILES: 标注结果 JSON 文件列表
+    """
+    from datalabel.llm import LLMClient, LLMConfig, QualityAnalyzer
+
+    with open(schema_file, "r", encoding="utf-8") as f:
+        schema = json.load(f)
+
+    click.echo(f"正在使用 {provider} 分析标注质量...")
+    click.echo(f"  结果文件数: {len(result_files)}")
+
+    config = LLMConfig(provider=provider, model=model)
+    client = LLMClient(config=config)
+    analyzer = QualityAnalyzer(client=client)
+
+    report = analyzer.analyze(
+        schema=schema,
+        result_files=list(result_files),
+        output_path=output,
+        sample_size=sample_size,
+    )
+
+    if report.success:
+        click.echo("\n质量分析报告:")
+        click.echo(f"  {report.summary}")
+        if report.issues:
+            click.echo(f"\n发现 {len(report.issues)} 个问题:")
+            for issue in report.issues:
+                icon = {"high": "🔴", "medium": "🟡", "low": "🟢"}.get(issue.severity, "⚪")
+                click.echo(f"  {icon} [{issue.task_id}] {issue.description}")
+        if report.disagreement_analysis:
+            click.echo("\n分歧分析:")
+            patterns = report.disagreement_analysis.get("common_patterns", "")
+            if patterns:
+                click.echo(f"  共性模式: {patterns}")
+        if output:
+            click.echo(f"\n✓ 报告已保存: {output}")
+        click.echo(
+            f"\n  Token 用量: {report.total_usage.total_tokens}"
+        )
+    else:
+        click.echo(f"✗ 分析失败: {report.error}", err=True)
+        sys.exit(1)
+
+
+@main.command(name="gen-guidelines")
+@click.argument("schema_file", type=click.Path(exists=True))
+@click.option("-t", "--tasks", "tasks_file", type=click.Path(exists=True), help="样例任务文件")
+@click.option("-o", "--output", type=click.Path(), required=True, help="输出文件路径 (Markdown)")
+@_PROVIDER_OPTION
+@_MODEL_OPTION
+@click.option(
+    "-l",
+    "--language",
+    type=click.Choice(["zh", "en"]),
+    default="zh",
+    help="指南语言 (默认: zh)",
+)
+def gen_guidelines(
+    schema_file: str,
+    tasks_file: Optional[str],
+    output: str,
+    provider: str,
+    model: Optional[str],
+    language: str,
+):
+    """使用 LLM 生成标注指南
+
+    SCHEMA_FILE: 标注规范 JSON 文件
+    """
+    from datalabel.llm import GuidelinesGenerator, LLMClient, LLMConfig
+
+    with open(schema_file, "r", encoding="utf-8") as f:
+        schema = json.load(f)
+
+    tasks = None
+    if tasks_file:
+        tasks = _load_tasks_file(tasks_file)
+
+    click.echo(f"正在使用 {provider} 生成标注指南...")
+
+    config = LLMConfig(provider=provider, model=model)
+    client = LLMClient(config=config)
+    gen = GuidelinesGenerator(client=client)
+
+    result = gen.generate(schema=schema, tasks=tasks, output_path=output, language=language)
+
+    if result.success:
+        click.echo(f"✓ 指南生成成功: {result.output_path}")
+        click.echo(
+            f"  Token 用量: {result.total_usage.total_tokens}"
+        )
+    else:
+        click.echo(f"✗ 生成失败: {result.error}", err=True)
+        sys.exit(1)
+
+
 if __name__ == "__main__":
     main()

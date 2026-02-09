@@ -116,6 +116,109 @@ def create_server() -> "Server":
                     "required": ["result_files"],
                 },
             ),
+            Tool(
+                name="llm_prelabel",
+                description="使用 LLM 自动预标注任务数据",
+                inputSchema={
+                    "type": "object",
+                    "properties": {
+                        "schema": {
+                            "type": "object",
+                            "description": "标注规范 Schema",
+                        },
+                        "tasks": {
+                            "type": "array",
+                            "description": "待标注任务列表",
+                        },
+                        "output_path": {
+                            "type": "string",
+                            "description": "输出文件路径",
+                        },
+                        "provider": {
+                            "type": "string",
+                            "enum": ["moonshot", "openai", "anthropic"],
+                            "description": "LLM 提供商 (默认: moonshot)",
+                        },
+                        "model": {
+                            "type": "string",
+                            "description": "模型名称（可选）",
+                        },
+                        "batch_size": {
+                            "type": "integer",
+                            "description": "每批任务数 (默认: 5)",
+                        },
+                    },
+                    "required": ["schema", "tasks", "output_path"],
+                },
+            ),
+            Tool(
+                name="llm_quality_analysis",
+                description="使用 LLM 分析标注质量，检测可疑标注和分歧",
+                inputSchema={
+                    "type": "object",
+                    "properties": {
+                        "schema": {
+                            "type": "object",
+                            "description": "标注规范 Schema",
+                        },
+                        "result_files": {
+                            "type": "array",
+                            "items": {"type": "string"},
+                            "description": "标注结果文件路径列表",
+                        },
+                        "output_path": {
+                            "type": "string",
+                            "description": "报告输出路径（可选）",
+                        },
+                        "provider": {
+                            "type": "string",
+                            "enum": ["moonshot", "openai", "anthropic"],
+                            "description": "LLM 提供商 (默认: moonshot)",
+                        },
+                        "model": {
+                            "type": "string",
+                            "description": "模型名称（可选）",
+                        },
+                    },
+                    "required": ["schema", "result_files"],
+                },
+            ),
+            Tool(
+                name="llm_gen_guidelines",
+                description="使用 LLM 根据 Schema 和样例自动生成标注指南",
+                inputSchema={
+                    "type": "object",
+                    "properties": {
+                        "schema": {
+                            "type": "object",
+                            "description": "标注规范 Schema",
+                        },
+                        "tasks": {
+                            "type": "array",
+                            "description": "样例任务列表（可选）",
+                        },
+                        "output_path": {
+                            "type": "string",
+                            "description": "输出文件路径 (Markdown)",
+                        },
+                        "provider": {
+                            "type": "string",
+                            "enum": ["moonshot", "openai", "anthropic"],
+                            "description": "LLM 提供商 (默认: moonshot)",
+                        },
+                        "model": {
+                            "type": "string",
+                            "description": "模型名称（可选）",
+                        },
+                        "language": {
+                            "type": "string",
+                            "enum": ["zh", "en"],
+                            "description": "指南语言 (默认: zh)",
+                        },
+                    },
+                    "required": ["schema", "output_path"],
+                },
+            ),
         ]
 
     @server.call_tool()
@@ -201,6 +304,92 @@ def create_server() -> "Server":
                     f"详细指标:\n{json.dumps(metrics, indent=2, ensure_ascii=False)}",
                 )
             ]
+
+        elif name == "llm_prelabel":
+            from datalabel.llm import LLMClient, LLMConfig, PreLabeler
+
+            provider = arguments.get("provider", "moonshot")
+            config = LLMConfig(provider=provider, model=arguments.get("model"))
+            client = LLMClient(config=config)
+            labeler = PreLabeler(client=client)
+
+            result = labeler.prelabel(
+                schema=arguments["schema"],
+                tasks=arguments["tasks"],
+                output_path=arguments["output_path"],
+                batch_size=arguments.get("batch_size", 5),
+            )
+
+            if result.success:
+                return [
+                    TextContent(
+                        type="text",
+                        text=f"预标注完成:\n"
+                        f"- 输出: {result.output_path}\n"
+                        f"- 标注数: {result.labeled_tasks}/{result.total_tasks}\n"
+                        f"- Token: {result.total_usage.total_tokens}",
+                    )
+                ]
+            else:
+                return [TextContent(type="text", text=f"预标注失败: {result.error}")]
+
+        elif name == "llm_quality_analysis":
+            from datalabel.llm import LLMClient, LLMConfig, QualityAnalyzer
+
+            provider = arguments.get("provider", "moonshot")
+            config = LLMConfig(provider=provider, model=arguments.get("model"))
+            client = LLMClient(config=config)
+            analyzer = QualityAnalyzer(client=client)
+
+            report = analyzer.analyze(
+                schema=arguments["schema"],
+                result_files=arguments["result_files"],
+                output_path=arguments.get("output_path"),
+            )
+
+            if report.success:
+                issues_text = ""
+                if report.issues:
+                    issues_text = "\n问题列表:\n" + "\n".join(
+                        f"- [{i.severity}] {i.task_id}: {i.description}"
+                        for i in report.issues
+                    )
+                return [
+                    TextContent(
+                        type="text",
+                        text=f"质量分析完成:\n{report.summary}{issues_text}\n"
+                        f"Token: {report.total_usage.total_tokens}",
+                    )
+                ]
+            else:
+                return [TextContent(type="text", text=f"质量分析失败: {report.error}")]
+
+        elif name == "llm_gen_guidelines":
+            from datalabel.llm import GuidelinesGenerator, LLMClient, LLMConfig
+
+            provider = arguments.get("provider", "moonshot")
+            config = LLMConfig(provider=provider, model=arguments.get("model"))
+            client = LLMClient(config=config)
+            gen = GuidelinesGenerator(client=client)
+
+            result = gen.generate(
+                schema=arguments["schema"],
+                tasks=arguments.get("tasks"),
+                output_path=arguments["output_path"],
+                language=arguments.get("language", "zh"),
+            )
+
+            if result.success:
+                return [
+                    TextContent(
+                        type="text",
+                        text=f"标注指南已生成:\n"
+                        f"- 输出: {result.output_path}\n"
+                        f"- Token: {result.total_usage.total_tokens}",
+                    )
+                ]
+            else:
+                return [TextContent(type="text", text=f"指南生成失败: {result.error}")]
 
         else:
             return [TextContent(type="text", text=f"未知工具: {name}")]
