@@ -52,10 +52,13 @@
 
 | 步骤 | 命令 | 产出 |
 |------|------|------|
-| 1. 生成界面 | `knowlyr-datalabel create schema.json tasks.json -o annotator.html` | `annotator.html` |
-| 2. 分发标注 | 发送 HTML 给标注员 | 浏览器中完成标注 |
-| 3. 收集结果 | 标注员导出 JSON/JSONL/CSV | `results_*.json` |
-| 4. 合并分析 | `knowlyr-datalabel merge results_*.json -o merged.json` | `merged.json` + IAA 报告 |
+| 1. 生成指南 | `knowlyr-datalabel gen-guidelines schema.json -o guide.md` | `guide.md` (可选) |
+| 2. 预标注 | `knowlyr-datalabel prelabel schema.json tasks.json -o pre.json` | `pre.json` (可选) |
+| 3. 生成界面 | `knowlyr-datalabel create schema.json tasks.json -o annotator.html` | `annotator.html` |
+| 4. 分发标注 | 发送 HTML 给标注员 | 浏览器中完成标注 |
+| 5. 收集结果 | 标注员导出 JSON/JSONL/CSV | `results_*.json` |
+| 6. 质量分析 | `knowlyr-datalabel quality schema.json results_*.json -o report.json` | `report.json` (可选) |
+| 7. 合并分析 | `knowlyr-datalabel merge results_*.json -o merged.json` | `merged.json` + IAA 报告 |
 
 ## 安装
 
@@ -606,7 +609,7 @@ src/datalabel/
 ├── generator.py          # HTML 标注界面生成器
 ├── merger.py             # 标注结果合并 & IAA (Cohen's/Fleiss' Kappa, Krippendorff's Alpha)
 ├── validator.py          # Schema & 任务数据校验
-├── cli.py                # CLI 命令行工具 (11 命令)
+├── cli.py                # CLI 命令行工具 (10 命令)
 ├── mcp_server.py         # MCP Server (7 工具)
 ├── templates/
 │   └── annotator.html    # Jinja2 HTML 模板 (暗黑模式, 统计面板, 撤销, 快捷键)
@@ -650,13 +653,19 @@ graph LR
 # 1. DataRecipe: 分析数据集，生成 Schema 和样例
 knowlyr-datarecipe deep-analyze tencent/CL-bench -o ./output
 
-# 2. DataLabel: 生成标注界面，人工标注/校准种子数据
-knowlyr-datalabel generate ./output/tencent_CL-bench/
+# 2. DataLabel: LLM 生成标注指南 + 预标注 + 人工校准
+knowlyr-datalabel gen-guidelines schema.json -t tasks.json -o guide.md -p moonshot
+knowlyr-datalabel prelabel schema.json tasks.json -o pre.json -p moonshot
+knowlyr-datalabel create schema.json tasks.json -o annotator.html -g guide.md
 
-# 3. DataSynth: 基于种子数据批量合成
+# 3. DataLabel: 收集结果 + LLM 质量分析 + 合并
+knowlyr-datalabel quality schema.json ann1.json ann2.json -o report.json
+knowlyr-datalabel merge ann1.json ann2.json -o merged.json
+
+# 4. DataSynth: 基于种子数据批量合成
 knowlyr-datasynth generate ./output/tencent_CL-bench/ -n 1000
 
-# 4. DataCheck: 质量检查
+# 5. DataCheck: 质量检查
 knowlyr-datacheck validate ./output/tencent_CL-bench/
 ```
 
@@ -667,7 +676,7 @@ knowlyr-datacheck validate ./output/tencent_CL-bench/
 | **AI Dataset Radar** | 数据集竞争情报、趋势分析 | [GitHub](https://github.com/liuxiaotong/ai-dataset-radar) |
 | **DataRecipe** | 逆向分析、Schema 提取、成本估算 | [GitHub](https://github.com/liuxiaotong/data-recipe) |
 | **DataSynth** | LLM 批量合成、种子数据扩充 | [GitHub](https://github.com/liuxiaotong/data-synth) |
-| **DataLabel** | 轻量标注工具、多标注员合并 | 当前项目 |
+| **DataLabel** | 轻量标注工具、LLM 分析、多标注员合并 | 当前项目 |
 | **DataCheck** | 规则验证、重复检测、分布分析 | [GitHub](https://github.com/liuxiaotong/data-check) |
 | **ModelAudit** | 蒸馏检测、模型指纹、身份验证 | [GitHub](https://github.com/liuxiaotong/model-audit) |
 | **AgentSandbox** | Docker 执行沙箱、轨迹重放 | [GitHub](https://github.com/liuxiaotong/agent-sandbox) |
@@ -684,5 +693,5 @@ knowlyr-datacheck validate ./output/tencent_CL-bench/
 ---
 
 <div align="center">
-<sub>为数据标注团队提供轻量级、零部署的标注解决方案</sub>
+<sub>为数据标注团队提供轻量级、零部署的标注解决方案 · LLM 驱动的智能标注分析</sub>
 </div>
