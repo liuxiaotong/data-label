@@ -12,7 +12,7 @@
 <br/>
 [![CI](https://github.com/liuxiaotong/data-label/actions/workflows/ci.yml/badge.svg)](https://github.com/liuxiaotong/data-label/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/liuxiaotong/data-label/graph/badge.svg)](https://codecov.io/gh/liuxiaotong/data-label)
-[![MCP](https://img.shields.io/badge/MCP-11_Tools%20·%206_Resources%20·%203_Prompts-purple.svg)](#mcp-server)
+[![MCP](https://img.shields.io/badge/MCP-12_Tools%20·%206_Resources%20·%203_Prompts-purple.svg)](#mcp-server)
 [![LLM](https://img.shields.io/badge/LLM-Kimi%20%7C%20OpenAI%20%7C%20Anthropic-orange.svg)](#llm-分析)
 [![Docker](https://img.shields.io/badge/Docker-ready-2496ED.svg)](#docker)
 
@@ -55,7 +55,7 @@
 | **LLM 质量分析** | 检测可疑标注、分析多标注员分歧 |
 | **LLM 指南生成** | 根据 Schema 和样例自动生成标注指南 |
 | **进度仪表盘** | 从标注结果生成独立 HTML 仪表盘：完成进度、分布图、一致性热力图、分歧表 |
-| **MCP 支持** | 11 工具 + 6 资源 + 3 Prompt 模板，可作为 Claude Desktop / Claude Code 的工具使用 |
+| **MCP 支持** | 12 工具 + 6 资源 + 3 Prompt 模板，可作为 Claude Desktop / Claude Code 的工具使用 |
 | **Docker** | 容器化运行，无需安装 Python 环境 |
 
 ### 工作流
@@ -477,7 +477,7 @@ docker run --rm -v $(pwd):/data knowlyr-datalabel \
 
 ## MCP Server
 
-在 Claude Desktop / Claude Code 中直接使用 DataLabel 功能。提供 **11 个工具**、**6 个资源** 和 **3 个 Prompt 模板**。
+在 Claude Desktop / Claude Code 中直接使用 DataLabel 功能。提供 **12 个工具**、**6 个资源** 和 **3 个 Prompt 模板**。
 
 <details><summary>⚙️ 配置</summary>
 
@@ -496,7 +496,7 @@ docker run --rm -v $(pwd):/data knowlyr-datalabel \
 
 </details>
 
-### Tools (11)
+### Tools (12)
 
 | 工具 | 功能 |
 |------|------|
@@ -511,6 +511,7 @@ docker run --rm -v $(pwd):/data knowlyr-datalabel \
 | `llm_prelabel` | 使用 LLM 自动预标注任务数据 |
 | `llm_quality_analysis` | 使用 LLM 分析标注质量和分歧 |
 | `llm_gen_guidelines` | 使用 LLM 生成标注指南 |
+| `adjudicate` | 冲突裁决（多数投票/专家优先/最长回答策略） |
 
 ### Resources (6)
 
@@ -729,7 +730,7 @@ src/datalabel/
 ├── validator.py          # Schema & 任务数据校验
 ├── io.py                 # 导入导出核心逻辑 (JSON/JSONL/CSV)
 ├── cli.py                # CLI 命令行工具 (11 命令)
-├── mcp_server/           # MCP Server (11 工具, 6 资源, 3 Prompts)
+├── mcp_server/           # MCP Server (12 工具, 6 资源, 3 Prompts)
 │   ├── __init__.py       # 包入口
 │   ├── _server.py        # 服务器创建与启动
 │   ├── _tools.py         # 工具定义与处理函数
