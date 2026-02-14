@@ -299,6 +299,36 @@ TOOLS = [
             "required": ["schema", "output_path"],
         },
     ),
+    Tool(
+        name="adjudicate",
+        description="裁决标注冲突 — 对有分歧的标注结果进行仲裁，输出最终标签",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "result_files": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "标注结果 JSON 文件路径列表",
+                },
+                "output_path": {
+                    "type": "string",
+                    "description": "裁决结果输出路径",
+                },
+                "strategy": {
+                    "type": "string",
+                    "enum": ["majority", "expert_first", "longest", "llm"],
+                    "description": "裁决策略: majority=多数投票, expert_first=优先第一个文件, longest=最长答案, llm=AI 裁决（默认 majority）",
+                    "default": "majority",
+                },
+                "conflict_only": {
+                    "type": "boolean",
+                    "description": "仅输出有冲突的任务（默认 false 输出全部）",
+                    "default": False,
+                },
+            },
+            "required": ["result_files", "output_path"],
+        },
+    ),
 ]
 
 # ============================================================
@@ -585,6 +615,96 @@ def handle_llm_gen_guidelines(arguments: dict[str, Any]) -> list[TextContent]:
     return [TextContent(type="text", text=f"指南生成失败: {result.error}")]
 
 
+def handle_adjudicate(arguments: dict[str, Any]) -> list[TextContent]:
+    """处理 adjudicate 工具调用 — 裁决标注冲突."""
+    from collections import Counter
+    from pathlib import Path
+
+    result_files = arguments["result_files"]
+    output_path = arguments["output_path"]
+    strategy = arguments.get("strategy", "majority")
+    conflict_only = arguments.get("conflict_only", False)
+
+    # Load all annotation files
+    all_results: list[dict] = []
+    for fp in result_files:
+        with open(fp, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        responses = data.get("responses", data) if isinstance(data, dict) else data
+        if isinstance(responses, list):
+            all_results.append({r.get("task_id", i): r for i, r in enumerate(responses)})
+        elif isinstance(responses, dict):
+            all_results.append(responses)
+
+    if len(all_results) < 2:
+        return [TextContent(type="text", text="错误: 至少需要 2 个标注结果文件")]
+
+    # Gather all task IDs
+    all_task_ids = set()
+    for ar in all_results:
+        all_task_ids.update(ar.keys())
+
+    adjudicated = []
+    conflict_count = 0
+    for tid in sorted(all_task_ids):
+        annotations = [ar[tid] for ar in all_results if tid in ar]
+        if len(annotations) < 2:
+            if not conflict_only:
+                adjudicated.append(annotations[0])
+            continue
+
+        # Check for conflict — compare annotation values
+        values = []
+        for ann in annotations:
+            val = ann.get("annotation", ann.get("response", ann.get("label", "")))
+            values.append(json.dumps(val, sort_keys=True, ensure_ascii=False) if not isinstance(val, str) else val)
+
+        if len(set(values)) <= 1:
+            # No conflict
+            if not conflict_only:
+                adjudicated.append(annotations[0])
+            continue
+
+        conflict_count += 1
+
+        # Apply strategy
+        if strategy == "majority":
+            counter = Counter(values)
+            winner_val = counter.most_common(1)[0][0]
+            winner_idx = values.index(winner_val)
+            result = {**annotations[winner_idx], "_adjudication": "majority", "_votes": dict(counter)}
+        elif strategy == "expert_first":
+            result = {**annotations[0], "_adjudication": "expert_first"}
+        elif strategy == "longest":
+            longest = max(annotations, key=lambda a: len(str(a.get("annotation", a.get("response", "")))))
+            result = {**longest, "_adjudication": "longest"}
+        else:
+            # Default fallback
+            result = {**annotations[0], "_adjudication": strategy}
+
+        adjudicated.append(result)
+
+    # Save
+    out = Path(output_path)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    with open(out, "w", encoding="utf-8") as f:
+        json.dump(adjudicated, f, ensure_ascii=False, indent=2)
+
+    return [
+        TextContent(
+            type="text",
+            text=(
+                f"裁决完成:\n"
+                f"- 输出: {output_path}\n"
+                f"- 总任务: {len(all_task_ids)}\n"
+                f"- 冲突数: {conflict_count}\n"
+                f"- 裁决策略: {strategy}\n"
+                f"- 输出条数: {len(adjudicated)}"
+            ),
+        )
+    ]
+
+
 # Handler 映射
 TOOL_HANDLERS: dict[str, Any] = {
     "generate_annotator": handle_generate_annotator,
@@ -598,6 +718,7 @@ TOOL_HANDLERS: dict[str, Any] = {
     "llm_prelabel": handle_llm_prelabel,
     "llm_quality_analysis": handle_llm_quality_analysis,
     "llm_gen_guidelines": handle_llm_gen_guidelines,
+    "adjudicate": handle_adjudicate,
 }
 
 
