@@ -28,6 +28,26 @@ class GeneratorResult:
     task_count: int = 0
 
 
+THEMES: Dict[str, Dict[str, str]] = {
+    "default": {},
+    "knowlyr": {
+        "primary": "#0d6b5e",
+        "primary_light": "#0f8c7a",
+        "primary_dark_mode": "#10b981",
+        "primary_light_dark_mode": "#34d399",
+        "font_family": '-apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif',
+        "card_border": "1px solid var(--border)",
+        "card_shadow": "none",
+        "card_radius": "8px",
+        "btn_radius": "100px",
+        "header_bg": "rgba(255,255,255,0.88)",
+        "header_backdrop": "blur(12px)",
+        "brand_name": "蚁聚社区",
+        "brand_color": "#0d6b5e",
+    },
+}
+
+
 class AnnotatorGenerator:
     """Generate standalone HTML annotation interfaces.
 
@@ -49,6 +69,7 @@ class AnnotatorGenerator:
         guidelines: Optional[str] = None,
         title: Optional[str] = None,
         page_size: int = 50,
+        theme: str = "default",
     ) -> GeneratorResult:
         """Generate an HTML annotation interface.
 
@@ -86,6 +107,7 @@ class AnnotatorGenerator:
                 guidelines=guidelines,
                 title=title,
                 page_size=page_size,
+                theme=theme,
             )
 
             # Render template
@@ -110,6 +132,7 @@ class AnnotatorGenerator:
         self,
         analysis_dir: str,
         output_path: Optional[str] = None,
+        theme: str = "default",
     ) -> GeneratorResult:
         """Generate from DataRecipe analysis output.
 
@@ -171,6 +194,7 @@ class AnnotatorGenerator:
             output_path=str(output_path),
             guidelines=guidelines,
             title=title,
+            theme=theme,
         )
 
     def _prepare_template_data(
@@ -180,6 +204,7 @@ class AnnotatorGenerator:
         guidelines: Optional[str],
         title: Optional[str],
         page_size: int = 50,
+        theme: str = "default",
     ) -> Dict[str, Any]:
         """Prepare data for template rendering."""
 
@@ -221,6 +246,8 @@ class AnnotatorGenerator:
                 }
             )
 
+        theme_vars = THEMES.get(theme, {})
+
         return {
             "title": title or schema.get("project_name", "DataLabel 标注"),
             "schema": schema,
@@ -236,4 +263,6 @@ class AnnotatorGenerator:
             "generated_at": datetime.now().isoformat(),
             "total_tasks": len(tasks),
             "page_size": page_size,
+            "theme": theme,
+            "theme_vars": theme_vars,
         }

@@ -32,7 +32,13 @@ def main():
     type=click.Path(),
     help="输出文件路径 (默认: analysis_dir/10_标注工具/annotator.html)",
 )
-def generate(analysis_dir: str, output: Optional[str]):
+@click.option(
+    "--theme",
+    type=click.Choice(["default", "knowlyr"]),
+    default="default",
+    help="界面主题 (默认: default)",
+)
+def generate(analysis_dir: str, output: Optional[str], theme: str):
     """从 DataRecipe 分析结果生成标注界面
 
     ANALYSIS_DIR: DataRecipe 分析输出目录的路径
@@ -43,6 +49,7 @@ def generate(analysis_dir: str, output: Optional[str]):
     result = generator.generate_from_datarecipe(
         analysis_dir=analysis_dir,
         output_path=output,
+        theme=theme,
     )
 
     if result.success:
@@ -63,6 +70,12 @@ def generate(analysis_dir: str, output: Optional[str]):
 )
 @click.option("-t", "--title", type=str, help="标注界面标题")
 @click.option("--page-size", type=int, default=50, help="任务列表每页显示数 (默认: 50)")
+@click.option(
+    "--theme",
+    type=click.Choice(["default", "knowlyr"]),
+    default="default",
+    help="界面主题 (默认: default)",
+)
 def create(
     schema_file: str,
     tasks_file: str,
@@ -70,6 +83,7 @@ def create(
     guidelines: Optional[str],
     title: Optional[str],
     page_size: int,
+    theme: str,
 ):
     """从 Schema 和任务文件创建标注界面
 
@@ -107,6 +121,7 @@ def create(
         guidelines=guidelines_content,
         title=title,
         page_size=page_size,
+        theme=theme,
     )
 
     if result.success:
