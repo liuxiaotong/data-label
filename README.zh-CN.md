@@ -1,6 +1,6 @@
 <div align="right">
 
-**English** | [中文](README.zh-CN.md)
+[English](README.md) | **中文**
 
 </div>
 
@@ -8,10 +8,10 @@
 
 <h1>DataLabel</h1>
 
-<h3>Serverless Human-in-the-Loop Annotation Framework<br/>with LLM Pre-Labeling and Inter-Annotator Agreement Analysis</h3>
+<h3>零服务器人机协同标注框架<br/>Serverless Human-in-the-Loop Annotation Framework</h3>
 
-<p><strong>零服务器人机协同标注框架 — LLM 预标注 · 多标注者一致性分析 · 离线 HTML 界面</strong><br/>
-<em>Zero-dependency annotation tool with LLM-assisted pre-labeling, multi-annotator agreement metrics, and offline HTML interface</em></p>
+<p><strong>LLM 预标注 · 多标注者一致性分析 · 离线 HTML 界面</strong><br/>
+<em>零依赖标注工具——LLM 辅助预标注、多标注者一致性指标、离线 HTML 界面</em></p>
 
 [![PyPI](https://img.shields.io/pypi/v/knowlyr-datalabel?color=blue)](https://pypi.org/project/knowlyr-datalabel/)
 [![Downloads](https://img.shields.io/pypi/dm/knowlyr-datalabel?color=green)](https://pypi.org/project/knowlyr-datalabel/)
@@ -20,18 +20,18 @@
 <br/>
 [![CI](https://github.com/liuxiaotong/data-label/actions/workflows/ci.yml/badge.svg)](https://github.com/liuxiaotong/data-label/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/liuxiaotong/data-label/graph/badge.svg)](https://codecov.io/gh/liuxiaotong/data-label)
-[![Tests](https://img.shields.io/badge/tests-296_passed-brightgreen.svg)](#development)
-[![MCP](https://img.shields.io/badge/MCP-12_Tools%20·%206_Resources%20·%203_Prompts-purple.svg)](#mcp-server)
-[![Annotation Types](https://img.shields.io/badge/Annotation_Types-5-orange.svg)](#annotation-types)
-[![LLM Providers](https://img.shields.io/badge/LLM_Providers-3-red.svg)](#llm-assisted-annotation)
+[![Tests](https://img.shields.io/badge/tests-296_passed-brightgreen.svg)](#开发-development)
+[![MCP](https://img.shields.io/badge/MCP-12_Tools%20·%206_Resources%20·%203_Prompts-purple.svg)](#mcp-服务器-mcp-server)
+[![Annotation Types](https://img.shields.io/badge/Annotation_Types-5-orange.svg)](#标注类型-annotation-types)
+[![LLM Providers](https://img.shields.io/badge/LLM_Providers-3-red.svg)](#llm-辅助标注-llm-assisted-annotation)
 
-[Abstract](#abstract) · [Problem Statement](#problem-statement) · [Formal Framework](#formal-framework) · [Architecture](#architecture) · [Key Innovations](#key-innovations) · [Quick Start](#quick-start) · [Annotation Types](#annotation-types) · [LLM Assisted Annotation](#llm-assisted-annotation) · [MCP Server](#mcp-server) · [Ecosystem](#ecosystem) · [References](#references)
+[摘要](#摘要-abstract) · [问题陈述](#问题陈述-problem-statement) · [形式化框架](#形式化框架-formal-framework) · [架构](#架构-architecture) · [核心创新](#核心创新-key-innovations) · [快速开始](#快速开始-quick-start) · [标注类型](#标注类型-annotation-types) · [LLM 辅助标注](#llm-辅助标注-llm-assisted-annotation) · [MCP 服务器](#mcp-服务器-mcp-server) · [生态系统](#生态系统-ecosystem) · [参考文献](#参考文献-references)
 
 </div>
 
 ---
 
-## Abstract
+## 摘要 / Abstract
 
 高质量标注数据是监督学习和 RLHF 的基础，但现有标注工具面临两个矛盾：重量级平台（Label Studio / Prodigy）部署运维成本高，轻量工具则缺少质量保证机制。DataLabel 提出**零服务器标注范式** (serverless annotation paradigm)——生成独立 HTML 文件，浏览器直接打开即可标注，无需服务器、无需网络。
 
@@ -41,7 +41,7 @@
 
 ---
 
-## Problem Statement
+## 问题陈述 / Problem Statement
 
 数据标注领域面临三个结构性问题：
 
@@ -55,9 +55,9 @@
 
 ---
 
-## Formal Framework
+## 形式化框架 / Formal Framework
 
-### Annotation Model
+### 标注模型 / Annotation Model
 
 标注任务形式化为四元组 $\mathcal{L} = \langle X, Y, A, \phi \rangle$：
 
@@ -70,7 +70,7 @@
 
 五种标签空间对应五种标注类型：评分 ($\mathbb{R}$)、单选 ($C$)、多选 ($2^C$)、文本 ($\Sigma^*$)、排序 ($S_k$，$k$ 元素的全排列)。
 
-### Inter-Annotator Agreement (IAA)
+### 标注者间一致性 / Inter-Annotator Agreement (IAA)
 
 **Cohen's Kappa**（两标注者）：
 
@@ -88,7 +88,7 @@ $$\alpha = 1 - \frac{D_o}{D_e}$$
 
 其中 $D_o$ 为观测不一致度，$D_e$ 为期望不一致度。
 
-### Merging Strategies
+### 合并策略 / Merging Strategies
 
 多标注者结果合并支持三种策略：
 
@@ -102,18 +102,18 @@ Strict 模式下未达一致的任务自动标记为 `needs_review`，进入冲�
 
 ---
 
-## Architecture
+## 架构 / Architecture
 
 ```mermaid
 graph LR
-    S["Schema<br/>Definition"] --> P["LLM Pre-Label<br/>(Optional)"]
-    P --> G["HTML Generator<br/>Self-Contained"]
-    G --> B["Browser<br/>Offline Annotation"]
-    B --> R["Results<br/>JSON/JSONL/CSV"]
-    R --> Q["Quality<br/>LLM Analysis"]
-    R --> M["Merge<br/>3 Strategies"]
-    M --> IAA["IAA Metrics<br/>κ / α"]
-    M --> D["Dashboard<br/>HTML Report"]
+    S["Schema<br/>定义"] --> P["LLM 预标注<br/>（可选）"]
+    P --> G["HTML 生成器<br/>独立文件"]
+    G --> B["浏览器<br/>离线标注"]
+    B --> R["结果<br/>JSON/JSONL/CSV"]
+    R --> Q["质量分析<br/>LLM 分析"]
+    R --> M["合并<br/>3 种策略"]
+    M --> IAA["IAA 指标<br/>κ / α"]
+    M --> D["仪表盘<br/>HTML 报告"]
 
     style G fill:#0969da,color:#fff,stroke:#0969da
     style M fill:#8b5cf6,color:#fff,stroke:#8b5cf6
@@ -126,24 +126,24 @@ graph LR
     style Q fill:#1a1a2e,color:#e0e0e0,stroke:#444
 ```
 
-### Annotation Pipeline
+### 标注管线 / Annotation Pipeline
 
 | 步骤 | 命令 | 产出 |
 |:---|:---|:---|
-| 1. 生成指南 | `knowlyr-datalabel gen-guidelines schema.json` | `guide.md` (可选) |
-| 2. LLM 预标注 | `knowlyr-datalabel prelabel schema.json tasks.json` | `pre.json` (可选) |
+| 1. 生成指南 | `knowlyr-datalabel gen-guidelines schema.json` | `guide.md`（可选） |
+| 2. LLM 预标注 | `knowlyr-datalabel prelabel schema.json tasks.json` | `pre.json`（可选） |
 | 3. 生成界面 | `knowlyr-datalabel create schema.json tasks.json` | `annotator.html` |
 | 4. 分发标注 | 发送 HTML 给标注员 | 浏览器中完成标注 |
 | 5. 收集结果 | 标注员导出 JSON/JSONL/CSV | `results_*.json` |
-| 6. 质量分析 | `knowlyr-datalabel quality schema.json results_*.json` | `report.json` (可选) |
+| 6. 质量分析 | `knowlyr-datalabel quality schema.json results_*.json` | `report.json`（可选） |
 | 7. 合并分析 | `knowlyr-datalabel merge results_*.json` | `merged.json` + IAA |
 | 8. 进度仪表盘 | `knowlyr-datalabel dashboard results_*.json` | `dashboard.html` |
 
 ---
 
-## Key Innovations
+## 核心创新 / Key Innovations
 
-### 1. Serverless Annotation Architecture
+### 1. 零服务器标注架构 / Serverless Annotation Architecture
 
 生成的 HTML 包含所有样式、逻辑和数据——无需服务器、无需网络、无需安装。标注数据保存在 `localStorage`，支持断点续标。
 
@@ -153,7 +153,7 @@ graph LR
 - **快捷键**：`←` `→` 导航、数字键评分/选择、`Ctrl+Z` 撤销
 - **大数据集**：任务侧边栏 + 分页 (25/50/100/200) + 搜索过滤，支持 1000+ 任务
 
-### 2. LLM-Assisted Pre-Labeling and Quality Analysis
+### 2. LLM 辅助预标注与质量分析 / LLM-Assisted Pre-Labeling and Quality Analysis
 
 LLM 介入标注管线的三个环节，从"人工从零标注"转变为"人工校准 LLM 预标"：
 
@@ -171,7 +171,7 @@ LLM 介入标注管线的三个环节，从"人工从零标注"转变为"人工�
 | OpenAI | `OPENAI_API_KEY` | gpt-4o-mini |
 | Anthropic | `ANTHROPIC_API_KEY` | claude-sonnet-4-20250514 |
 
-### 3. Multi-Metric Inter-Annotator Agreement
+### 3. 多指标标注者间一致性 / Multi-Metric Inter-Annotator Agreement
 
 三种 IAA 指标覆盖不同场景：
 
@@ -187,13 +187,13 @@ LLM 介入标注管线的三个环节，从"人工从零标注"转变为"人工�
 knowlyr-datalabel iaa ann1.json ann2.json ann3.json
 ```
 
-### 4. Multi-Strategy Result Merging
+### 4. 多策略结果合并 / Multi-Strategy Result Merging
 
 三种合并策略适配不同质量要求：`majority`（通用）、`average`（连续评分）、`strict`（高质量要求，未一致标记 `needs_review`）。
 
 支持 Borda 计数法合并排序标注，交集/并集策略合并多选标注。
 
-### 5. Visual Analytics Dashboard
+### 5. 可视化分析仪表盘 / Visual Analytics Dashboard
 
 从标注结果生成独立 HTML 仪表盘（同样零依赖、离线可用）：
 
@@ -206,19 +206,19 @@ knowlyr-datalabel iaa ann1.json ann2.json ann3.json
 | 标注分歧表 | 存在分歧的任务列表（支持搜索过滤） |
 | 时间分析 | 按天统计标注量趋势图 |
 
-### 6. Five Annotation Types
+### 6. 五种标注类型 / Five Annotation Types
 
 通过 Schema 中的 `annotation_config` 配置，覆盖主流标注场景：
 
 | 类型 | 标签空间 | 适用场景 |
 |:---|:---|:---|
-| Scoring | $\mathbb{R}$ | 质量评分、相关性打分 |
-| Single Choice | $C$ | 情感分类、意图识别 |
-| Multi Choice | $2^C$ | 多标签分类、属性标注 |
-| Text | $\Sigma^*$ | 翻译、纠错、改写 |
-| Ranking | $S_k$ | 偏好排序、RLHF 比较 |
+| 评分 Scoring | $\mathbb{R}$ | 质量评分、相关性打分 |
+| 单选 Single Choice | $C$ | 情感分类、意图识别 |
+| 多选 Multi Choice | $2^C$ | 多标签分类、属性标注 |
+| 文本 Text | $\Sigma^*$ | 翻译、纠错、改写 |
+| 排序 Ranking | $S_k$ | 偏好排序、RLHF 比较 |
 
-### 7. DataRecipe Integration
+### 7. DataRecipe 集成 / DataRecipe Integration
 
 直接从 DataRecipe 分析结果生成标注界面——自动推断 Schema、提取样例、生成任务：
 
@@ -226,13 +226,13 @@ knowlyr-datalabel iaa ann1.json ann2.json ann3.json
 knowlyr-datalabel generate ./analysis_output/my_dataset/
 ```
 
-### 8. Conflict Adjudication
+### 8. 冲突裁决 / Conflict Adjudication
 
 冲突裁决工具提供三种策略：多数投票、专家优先、最长回答，通过 MCP `adjudicate` 工具或 CLI 调用。
 
 ---
 
-## Quick Start
+## 快速开始 / Quick Start
 
 ```bash
 pip install knowlyr-datalabel
@@ -311,12 +311,12 @@ print(f"Krippendorff's α: {metrics['krippendorff_alpha']:.3f}")
 
 ---
 
-## Annotation Types
+## 标注类型 / Annotation Types
 
 <details>
 <summary>5 种标注类型配置详情</summary>
 
-### 1. Scoring (默认)
+### 1. 评分 Scoring（默认）
 
 ```json
 {
@@ -328,7 +328,7 @@ print(f"Krippendorff's α: {metrics['krippendorff_alpha']:.3f}")
 }
 ```
 
-### 2. Single Choice
+### 2. 单选 Single Choice
 
 ```json
 {
@@ -343,7 +343,7 @@ print(f"Krippendorff's α: {metrics['krippendorff_alpha']:.3f}")
 }
 ```
 
-### 3. Multi Choice
+### 3. 多选 Multi Choice
 
 ```json
 {
@@ -358,7 +358,7 @@ print(f"Krippendorff's α: {metrics['krippendorff_alpha']:.3f}")
 }
 ```
 
-### 4. Text
+### 4. 文本 Text
 
 ```json
 {
@@ -370,7 +370,7 @@ print(f"Krippendorff's α: {metrics['krippendorff_alpha']:.3f}")
 }
 ```
 
-### 5. Ranking
+### 5. 排序 Ranking
 
 ```json
 {
@@ -389,9 +389,9 @@ print(f"Krippendorff's α: {metrics['krippendorff_alpha']:.3f}")
 
 ---
 
-## LLM Assisted Annotation
+## LLM 辅助标注 / LLM Assisted Annotation
 
-### Pre-Labeling
+### 预标注 / Pre-Labeling
 
 ```bash
 # Kimi 预标注
@@ -404,7 +404,7 @@ knowlyr-datalabel prelabel schema.json tasks.json -o pre.json -p openai
 knowlyr-datalabel prelabel schema.json tasks.json -o pre.json -p moonshot -m kimi-k2 --batch-size 10
 ```
 
-### Quality Analysis
+### 质量分析 / Quality Analysis
 
 ```bash
 # 单标注员质量检查
@@ -414,7 +414,7 @@ knowlyr-datalabel quality schema.json results.json -o report.json -p moonshot
 knowlyr-datalabel quality schema.json ann1.json ann2.json -o report.json
 ```
 
-### Guidelines Generation
+### 指南生成 / Guidelines Generation
 
 ```bash
 knowlyr-datalabel gen-guidelines schema.json -t tasks.json -o guidelines.md -l zh
@@ -422,7 +422,7 @@ knowlyr-datalabel gen-guidelines schema.json -t tasks.json -o guidelines.md -l z
 
 ---
 
-## MCP Server
+## MCP 服务器 / MCP Server
 
 ```json
 {
@@ -435,9 +435,9 @@ knowlyr-datalabel gen-guidelines schema.json -t tasks.json -o guidelines.md -l z
 }
 ```
 
-### Tools (12)
+### 工具 Tools (12)
 
-| Tool | Description |
+| 工具 | 说明 |
 |:---|:---|
 | `generate_annotator` | 从 DataRecipe 分析结果生成标注界面 |
 | `create_annotator` | 从 Schema 和任务创建标注界面 |
@@ -452,9 +452,9 @@ knowlyr-datalabel gen-guidelines schema.json -t tasks.json -o guidelines.md -l z
 | `llm_gen_guidelines` | LLM 标注指南生成 |
 | `adjudicate` | 冲突裁决 |
 
-### Resources (6) · Prompts (3)
+### 资源 Resources (6) · 提示词 Prompts (3)
 
-| Resources | Prompts |
+| 资源 | 提示词 |
 |:---|:---|
 | `datalabel://schemas/{type}` — 5 种 Schema 模板 | `create-annotation-schema` — 引导生成 Schema |
 | `datalabel://reference/annotation-types` — 标注类型说明 | `review-annotations` — 分析标注质量 |
@@ -462,7 +462,7 @@ knowlyr-datalabel gen-guidelines schema.json -t tasks.json -o guidelines.md -l z
 
 ---
 
-## CLI Reference
+## CLI 参考 / CLI Reference
 
 <details>
 <summary>完整命令列表</summary>
@@ -504,22 +504,22 @@ docker run --rm -v $(pwd):/data knowlyr-datalabel \
 
 ---
 
-## Ecosystem
+## 生态系统 / Ecosystem
 
 <details>
-<summary>Architecture Diagram</summary>
+<summary>架构图</summary>
 
 ```mermaid
 graph LR
-    Radar["Radar<br/>Discovery"] --> Recipe["Recipe<br/>Analysis"]
-    Recipe --> Synth["Synth<br/>Generation"]
-    Recipe --> Label["Label<br/>Annotation"]
-    Synth --> Check["Check<br/>Quality"]
+    Radar["Radar<br/>数据发现"] --> Recipe["Recipe<br/>逆向分析"]
+    Recipe --> Synth["Synth<br/>数据合成"]
+    Recipe --> Label["Label<br/>数据标注"]
+    Synth --> Check["Check<br/>质量验证"]
     Label --> Check
-    Check --> Audit["Audit<br/>Model Audit"]
-    Crew["Crew<br/>Deliberation Engine"]
-    Agent["Agent<br/>RL Framework"]
-    ID["ID<br/>Identity Runtime"]
+    Check --> Audit["Audit<br/>模型审计"]
+    Crew["Crew<br/>协商引擎"]
+    Agent["Agent<br/>RL 框架"]
+    ID["ID<br/>身份运行时"]
     Crew -.->|能力定义| ID
     ID -.->|身份 + 记忆| Crew
     Crew -.->|轨迹 + 奖励| Agent
@@ -538,34 +538,34 @@ graph LR
 
 </details>
 
-| Layer | Project | Description | Repo |
+| 层 | 项目 | 说明 | 仓库 |
 |:---|:---|:---|:---|
-| Discovery | **AI Dataset Radar** | 数据集竞争情报、趋势分析 | [GitHub](https://github.com/liuxiaotong/ai-dataset-radar) |
-| Analysis | **DataRecipe** | 逆向分析、Schema 提取、成本估算 | [GitHub](https://github.com/liuxiaotong/data-recipe) |
-| Production | **DataSynth** | LLM 批量合成 | [GitHub](https://github.com/liuxiaotong/data-synth) |
-| Production | **DataLabel** | 零服务器标注 · LLM 预标注 · IAA 分析 | You are here |
-| Quality | **DataCheck** | 规则验证、重复检测、分布分析 | [GitHub](https://github.com/liuxiaotong/data-check) |
-| Audit | **ModelAudit** | 蒸馏检测、模型指纹 | [GitHub](https://github.com/liuxiaotong/model-audit) |
-| Identity | **knowlyr-id** | 身份系统 + AI 员工运行时 | [GitHub](https://github.com/liuxiaotong/knowlyr-id) |
-| Deliberation | **Crew** | 对抗式多智能体协商 · 持久记忆进化 · MCP 原生 | [GitHub](https://github.com/liuxiaotong/knowlyr-crew) |
-| Agent Training | **knowlyr-gym** | Gymnasium 风格 RL 框架 · 过程奖励模型 · SFT/DPO/GRPO | [GitHub](https://github.com/liuxiaotong/knowlyr-gym) |
+| 发现 | **AI Dataset Radar** | 数据集竞争情报、趋势分析 | [GitHub](https://github.com/liuxiaotong/ai-dataset-radar) |
+| 分析 | **DataRecipe** | 逆向分析、Schema 提取、成本估算 | [GitHub](https://github.com/liuxiaotong/data-recipe) |
+| 生产 | **DataSynth** | LLM 批量合成 | [GitHub](https://github.com/liuxiaotong/data-synth) |
+| 生产 | **DataLabel** | 零服务器标注 · LLM 预标注 · IAA 分析 | 当前项目 |
+| 质量 | **DataCheck** | 规则验证、重复检测、分布分析 | [GitHub](https://github.com/liuxiaotong/data-check) |
+| 审计 | **ModelAudit** | 蒸馏检测、模型指纹 | [GitHub](https://github.com/liuxiaotong/model-audit) |
+| 身份 | **knowlyr-id** | 身份系统 + AI 员工运行时 | [GitHub](https://github.com/liuxiaotong/knowlyr-id) |
+| 协商 | **Crew** | 对抗式多智能体协商 · 持久记忆进化 · MCP 原生 | [GitHub](https://github.com/liuxiaotong/knowlyr-crew) |
+| 训练 | **knowlyr-gym** | Gymnasium 风格 RL 框架 · 过程奖励模型 · SFT/DPO/GRPO | [GitHub](https://github.com/liuxiaotong/knowlyr-gym) |
 
 ---
 
-## Development
+## 开发 / Development
 
 ```bash
 git clone https://github.com/liuxiaotong/data-label.git
 cd data-label
 pip install -e ".[all,dev]"
-pytest    # 296 test cases
+pytest    # 296 测试用例
 ```
 
-**CI**: GitHub Actions，Python 3.10+，Codecov 覆盖率。Tag push 自动发布 PyPI + GitHub Release。
+**CI**：GitHub Actions，Python 3.10+，Codecov 覆盖率。Tag push 自动发布 PyPI + GitHub Release。
 
 ---
 
-## References
+## 参考文献 / References
 
 - **Inter-Annotator Agreement** — Artstein, R. & Poesio, M., 2008. *Inter-Coder Agreement for Computational Linguistics.* Computational Linguistics — IAA 指标的系统性综述
 - **Cohen's Kappa** — Cohen, J., 1960. *A Coefficient of Agreement for Nominal Scales.* Educational and Psychological Measurement — 两标注者一致性度量
@@ -576,12 +576,12 @@ pytest    # 296 test cases
 
 ---
 
-## License
+## 许可证 / License
 
 [MIT](LICENSE)
 
 ---
 
 <div align="center">
-<sub><a href="https://github.com/liuxiaotong">knowlyr</a> — serverless annotation framework with LLM pre-labeling and inter-annotator agreement analysis</sub>
+<sub><a href="https://github.com/liuxiaotong">knowlyr</a> — 零服务器人机协同标注框架，LLM 预标注与标注者间一致性分析</sub>
 </div>
