@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "knowlyr-datalabel"
-version = "0.3.0"
+version = "0.3.1"
 description = "Lightweight data annotation toolkit - generate standalone HTML labeling interfaces"
 readme = "README.md"
 license = "MIT"
@@ -38,8 +38,9 @@ openai = ["openai>=1.0,<3.0"]
 anthropic = ["anthropic>=0.18,<1.0"]
 llm = ["knowlyr-datalabel[openai]"]
 llm-all = ["knowlyr-datalabel[openai,anthropic]"]
+server = ["fastapi>=0.104.0", "uvicorn[standard]>=0.24.0", "pydantic-settings>=2.0.0"]
 dev = ["pytest", "pytest-cov", "ruff"]
-all = ["knowlyr-datalabel[mcp,llm-all,dev]"]
+all = ["knowlyr-datalabel[mcp,llm-all,server,dev]"]
 
 [project.scripts]
 knowlyr-datalabel = "datalabel.cli:main"
