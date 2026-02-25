@@ -13,7 +13,12 @@ class ValidationResult:
     warnings: List[str] = field(default_factory=list)
 
 
-VALID_ANNOTATION_TYPES = {"scoring", "single_choice", "multi_choice", "text", "ranking"}
+VALID_ANNOTATION_TYPES = {"scoring", "single_choice", "multi_choice", "text", "ranking", "multi_field"}
+
+# multi_field 子字段允许的类型
+VALID_FIELD_TYPES = {"number", "text", "single_choice", "multi_choice", "image_upload"}
+# 这些子字段类型必须提供 options
+FIELD_TYPES_REQUIRING_OPTIONS = {"single_choice", "multi_choice"}
 
 
 class SchemaValidator:
@@ -119,6 +124,11 @@ class SchemaValidator:
             )
             return
 
+        # multi_field has its own validation
+        if ann_type == "multi_field":
+            self._validate_multi_field_config(config, result)
+            return
+
         # Types that require options
         if ann_type in ("single_choice", "multi_choice", "ranking"):
             options = config.get("options")
@@ -132,6 +142,61 @@ class SchemaValidator:
                 result.errors.append(
                     "annotation_config.options 至少需要 2 个选项"
                 )
+
+    def _validate_multi_field_config(
+        self, config: Any, result: ValidationResult
+    ) -> None:
+        """Validate multi_field annotation config."""
+        fields = config.get("fields")
+        if not fields or not isinstance(fields, list):
+            result.valid = False
+            result.errors.append(
+                "annotation_config.type='multi_field' 需要 fields 数组且不能为空"
+            )
+            return
+
+        seen_names = set()
+        for i, f in enumerate(fields):
+            prefix = f"annotation_config.fields[{i}]"
+            if not isinstance(f, dict):
+                result.valid = False
+                result.errors.append(f"{prefix} 必须是字典")
+                continue
+
+            # 必须有 name, type, label
+            for required_key in ("name", "type", "label"):
+                if required_key not in f:
+                    result.valid = False
+                    result.errors.append(f"{prefix} 缺少 {required_key} 字段")
+
+            field_name = f.get("name")
+            if field_name:
+                if field_name in seen_names:
+                    result.valid = False
+                    result.errors.append(f"{prefix} name '{field_name}' 重复")
+                seen_names.add(field_name)
+
+            field_type = f.get("type")
+            if field_type and field_type not in VALID_FIELD_TYPES:
+                result.valid = False
+                result.errors.append(
+                    f"{prefix} type '{field_type}' 无效，"
+                    f"支持的类型: {', '.join(sorted(VALID_FIELD_TYPES))}"
+                )
+
+            # 需要 options 的子字段类型
+            if field_type in FIELD_TYPES_REQUIRING_OPTIONS:
+                options = f.get("options")
+                if not options:
+                    result.valid = False
+                    result.errors.append(
+                        f"{prefix} type='{field_type}' 需要 options 字段"
+                    )
+                elif not isinstance(options, list) or len(options) < 2:
+                    result.valid = False
+                    result.errors.append(
+                        f"{prefix} options 至少需要 2 个选项"
+                    )
 
     def _validate_scoring_rubric(
         self, rubric: Any, result: ValidationResult

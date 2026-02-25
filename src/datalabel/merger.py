@@ -181,6 +181,8 @@ class ResultMerger:
             base.update(self._merge_text_responses(responses, strategy))
         elif "ranking" in first:
             base.update(self._merge_ranking_responses(responses, strategy))
+        elif "fields" in first:
+            base.update(self._merge_multi_field_responses(responses, strategy))
         else:
             # Fallback: try score
             base.update(self._merge_score_responses(responses, strategy))
@@ -277,6 +279,66 @@ class ResultMerger:
 
         merged = sorted(scores.keys(), key=lambda x: scores[x], reverse=True)
         return {"ranking": merged, "individual_rankings": rankings}
+
+    def _merge_multi_field_responses(
+        self, responses: List[Dict[str, Any]], strategy: str
+    ) -> Dict[str, Any]:
+        """Merge multi_field responses.
+
+        Each response has {"fields": {"fieldName": value, ...}}.
+        Merge each sub-field independently based on its value type:
+        - numeric values: average/median (average strategy) or majority
+        - string/choice values: majority voting
+        """
+        all_fields_data = [r["fields"] for r in responses]
+
+        # Collect all field names
+        all_keys = set()
+        for fd in all_fields_data:
+            all_keys.update(fd.keys())
+
+        merged_fields = {}
+        individual_fields = {}
+
+        for key in sorted(all_keys):
+            values = [fd[key] for fd in all_fields_data if key in fd]
+            individual_fields[key] = values
+
+            if not values:
+                merged_fields[key] = None
+                continue
+
+            if strategy == "strict":
+                # All must agree
+                if len(set(str(v) for v in values)) == 1:
+                    merged_fields[key] = values[0]
+                else:
+                    merged_fields[key] = None
+            elif all(isinstance(v, (int, float)) for v in values):
+                # Numeric: average for "average", majority for "majority"
+                if strategy == "average":
+                    merged_fields[key] = sum(values) / len(values)
+                else:
+                    counts = defaultdict(int)
+                    for v in values:
+                        counts[v] += 1
+                    merged_fields[key] = max(counts.keys(), key=lambda x: counts[x])
+            else:
+                # String/choice: majority voting
+                counts = defaultdict(int)
+                for v in values:
+                    counts[str(v)] += 1
+                winner = max(counts.keys(), key=lambda x: counts[x])
+                # Try to return original type
+                for v in values:
+                    if str(v) == winner:
+                        merged_fields[key] = v
+                        break
+
+        return {
+            "fields": merged_fields,
+            "individual_fields": individual_fields,
+        }
 
     def calculate_iaa(
         self,
@@ -532,6 +594,10 @@ class ResultMerger:
                 values.append(r["text"])
             elif "ranking" in r:
                 values.append(tuple(r["ranking"]))
+            elif "fields" in r:
+                # multi_field: create a hashable representation
+                fd = r["fields"]
+                values.append(tuple(sorted((k, str(v)) for k, v in fd.items())))
             else:
                 values.append(r.get("score"))
         return values

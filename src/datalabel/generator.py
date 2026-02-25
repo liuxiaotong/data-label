@@ -234,6 +234,11 @@ class AnnotatorGenerator:
         else:
             annotation_type = "scoring"
 
+        # multi_field: ensure fields metadata is available in config
+        multi_field_fields = []
+        if annotation_type == "multi_field":
+            multi_field_fields = annotation_config.get("fields", [])
+
         # Prepare task data (use the 'data' field if present)
         prepared_tasks = []
         for i, task in enumerate(tasks):
@@ -256,6 +261,8 @@ class AnnotatorGenerator:
             "annotation_type": annotation_type,
             "annotation_config": annotation_config,
             "annotation_config_json": json.dumps(annotation_config, ensure_ascii=False),
+            "multi_field_fields": multi_field_fields,
+            "multi_field_fields_json": json.dumps(multi_field_fields, ensure_ascii=False),
             "tasks": prepared_tasks,
             "tasks_json": json.dumps(prepared_tasks, ensure_ascii=False),
             "schema_json": json.dumps(schema, ensure_ascii=False),
