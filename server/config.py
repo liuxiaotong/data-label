@@ -14,7 +14,7 @@ try:
             env_prefix = "DATA_LABEL_"
 
 except ImportError:
-    from dataclasses import dataclass, field
+    from dataclasses import dataclass
 
     @dataclass
     class Settings:  # type: ignore[no-redef]
