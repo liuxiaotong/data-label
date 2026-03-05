@@ -21,10 +21,10 @@ class TestToolDefinitions:
     """测试工具定义的完整性."""
 
     def test_tool_count(self):
-        assert len(TOOLS) == 11
+        assert len(TOOLS) == 12
 
     def test_handler_count(self):
-        assert len(TOOL_HANDLERS) == 11
+        assert len(TOOL_HANDLERS) == 12
 
     def test_all_tools_have_handlers(self):
         tool_names = {t.name for t in TOOLS}
