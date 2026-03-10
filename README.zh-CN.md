@@ -6,6 +6,9 @@
 
 <div align="center">
 
+<img src="assets/icon.png" width="128" alt="data-label icon">
+<br/>
+
 <h1>DataLabel</h1>
 
 <h3>零服务器人机协同标注框架<br/>Serverless Human-in-the-Loop Annotation Framework</h3>
