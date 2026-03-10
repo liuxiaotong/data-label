@@ -6,6 +6,9 @@
 
 <div align="center">
 
+<img src="assets/icon.png" width="128" alt="data-label icon">
+<br/>
+
 <h1>DataLabel</h1>
 
 <h3>Serverless Human-in-the-Loop Annotation Framework<br/>with LLM Pre-Labeling and Inter-Annotator Agreement Analysis</h3>
